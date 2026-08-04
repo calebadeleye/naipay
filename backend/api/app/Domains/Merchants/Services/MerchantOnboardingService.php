@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Merchants\Services;
 
+use App\Domains\Accounts\Services\MerchantAccountService;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -37,6 +38,7 @@ final class MerchantOnboardingService
         private readonly ReferenceGenerator $references,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly MerchantAccountService $accounts,
     ) {}
 
     /**
@@ -202,18 +204,27 @@ final class MerchantOnboardingService
             );
         }
 
-        return $this->transition(
-            $merchant,
-            OnboardingStatus::Approved,
-            'merchant.approved',
-            $actor,
-            extra: [
-                'merchant_status' => MerchantStatus::Active,
-                'approved_by' => $actor->getKey(),
-                'approved_at' => now(),
-                'rejection_reason' => null,
-            ],
-        );
+        return DB::transaction(function () use ($merchant, $actor): Merchant {
+            $approved = $this->transition(
+                $merchant,
+                OnboardingStatus::Approved,
+                'merchant.approved',
+                $actor,
+                extra: [
+                    'merchant_status' => MerchantStatus::Active,
+                    'approved_by' => $actor->getKey(),
+                    'approved_at' => now(),
+                    'rejection_reason' => null,
+                ],
+            );
+
+            // The final onboarding step: the merchant gets their account
+            // number. Inside the same transaction, so an approval can never
+            // leave a merchant approved but accountless.
+            $this->accounts->openFor($approved, $actor);
+
+            return $approved->fresh();
+        });
     }
 
     public function reject(Merchant $merchant, string $reason, Staff $actor): Merchant

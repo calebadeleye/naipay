@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Domains\Branches\Database\Seeders\HeadOfficeSeeder;
 use App\Domains\Businesses\Database\Seeders\BusinessCategorySeeder;
+use App\Domains\Documents\Database\Seeders\DocumentTypeSeeder;
 use App\Domains\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Domains\Identity\Database\Seeders\SuperAdministratorSeeder;
 use Illuminate\Database\Seeder;
@@ -28,6 +29,7 @@ final class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             HeadOfficeSeeder::class,
             BusinessCategorySeeder::class,
+            DocumentTypeSeeder::class,
             SuperAdministratorSeeder::class,
         ]);
     }

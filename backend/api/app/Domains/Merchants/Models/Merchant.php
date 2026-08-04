@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Merchants\Models;
 
+use App\Domains\Accounts\Models\MerchantAccount;
 use App\Domains\Branches\Concerns\BelongsToBranch;
 use App\Domains\Businesses\Models\Business;
 use App\Domains\Identity\Models\Staff;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -101,6 +103,17 @@ class Merchant extends Model
     public function businesses(): HasMany
     {
         return $this->hasMany(Business::class);
+    }
+
+    /**
+     * The merchant's internal account. Opened at approval, so a merchant in
+     * draft legitimately has none.
+     *
+     * @return HasOne<MerchantAccount, $this>
+     */
+    public function account(): HasOne
+    {
+        return $this->hasOne(MerchantAccount::class);
     }
 
     /**

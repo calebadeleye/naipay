@@ -122,6 +122,17 @@ final class MerchantResource extends JsonResource
                 'full_name' => $merchant->assignedOfficer->fullName(),
             ] : null,
 
+            // Opened at approval, so a merchant in draft legitimately has none.
+            'account' => $merchant->relationLoaded('account') && $merchant->account !== null ? [
+                'id' => $merchant->account->id,
+                'account_number' => $merchant->account->account_number,
+                'account_number_formatted' => $merchant->account->formattedAccountNumber(),
+                'account_name' => $merchant->account->account_name,
+                'currency' => $merchant->account->currency,
+                'status' => $merchant->account->status->value,
+                'available_balance' => $merchant->account->available_balance?->jsonSerialize(),
+            ] : null,
+
             'businesses' => BusinessResource::collection($this->whenLoaded('businesses')),
             'businesses_count' => $this->whenCounted('businesses'),
 
