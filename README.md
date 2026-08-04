@@ -212,12 +212,15 @@ that introduces it.
 
 Delivered in phases, each independently deployable and tested before the next begins.
 
+Administrative screens for phases 2 onwards are deliberately deferred to Phase 16, where the
+design system they depend on is built. Backend work runs ahead of the interface.
+
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Project foundation | ✅ Complete |
 | 1 | Authentication and access control | ✅ Complete |
-| 2 | Branch, staff and organisational management | ⚠️ API complete; admin screens outstanding |
-| 3 | Business categories | Pending |
+| 2 | Branch, staff and organisational management | ✅ API complete |
+| 3 | Business categories | ✅ API complete |
 | 4 | Merchant and business onboarding | Pending |
 | 5 | Documents and KYC | Pending |
 | 6 | Loan products | Pending |
