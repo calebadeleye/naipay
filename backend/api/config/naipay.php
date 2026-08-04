@@ -168,6 +168,7 @@ return [
             'loan.restructure',
             'loan.write_off',
             'account.close',
+            'merchant.approve',
             'merchant.sensitive_update',
             'staff.role_change',
             'staff.approval_limit_change',

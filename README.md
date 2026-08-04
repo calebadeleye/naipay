@@ -221,7 +221,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 1 | Authentication and access control | ✅ Complete |
 | 2 | Branch, staff and organisational management | ✅ API complete |
 | 3 | Business categories | ✅ API complete |
-| 4 | Merchant and business onboarding | Pending |
+| 4 | Merchant and business onboarding | ✅ API complete |
 | 5 | Documents and KYC | Pending |
 | 6 | Loan products | Pending |
 | 7 | Loan applications | Pending |
