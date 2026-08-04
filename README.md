@@ -197,6 +197,7 @@ These are load-bearing. Financial correctness in this system depends on them.
 | Document | Contents |
 | --- | --- |
 | [`docs/architecture.md`](docs/architecture.md) | Domain structure and design decisions |
+| [`docs/roles-and-permissions.md`](docs/roles-and-permissions.md) | The role and permission matrix |
 | [`docs/environment-variables.md`](docs/environment-variables.md) | Every environment variable |
 | [`docs/installation.md`](docs/installation.md) | Full local setup |
 | [`docs/deployment.md`](docs/deployment.md) | Deploying to `naipay.naitalk.com` |
@@ -214,7 +215,7 @@ Delivered in phases, each independently deployable and tested before the next be
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Project foundation | ✅ Complete |
-| 1 | Authentication and access control | Pending |
+| 1 | Authentication and access control | ✅ Complete |
 | 2 | Branch, staff and organisational management | Pending |
 | 3 | Business categories | Pending |
 | 4 | Merchant and business onboarding | Pending |

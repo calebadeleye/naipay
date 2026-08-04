@@ -9,6 +9,7 @@ use App\Support\Http\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
@@ -34,6 +35,14 @@ final class ApiExceptionRenderer
     public function render(Throwable $e, Request $request): ?JsonResponse
     {
         if (! $this->shouldHandle($request)) {
+            return null;
+        }
+
+        // Some exceptions carry the response they want returned — the throttle
+        // middleware's custom 429 among them. Handing these back to Laravel is
+        // the only correct move; treating them as unhandled would turn a
+        // deliberate 429 into a 500.
+        if ($e instanceof HttpResponseException) {
             return null;
         }
 

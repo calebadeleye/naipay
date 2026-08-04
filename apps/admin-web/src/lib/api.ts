@@ -23,6 +23,11 @@ export const api = new NaipayApiClient({
     const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
 
     if (!window.location.pathname.startsWith('/sign-in')) {
+      // A hard navigation rather than router.push, deliberately: the session is
+      // gone, so every cached query and every piece of component state holding
+      // merchant or portfolio data should be discarded rather than carried
+      // into the sign-in screen. A client-side transition would preserve it.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = `/sign-in?return_to=${returnTo}`;
     }
   },

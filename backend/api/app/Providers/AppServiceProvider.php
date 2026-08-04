@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -20,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerDomainMigrations();
+        $this->registerFactoryResolution();
         $this->configureModels();
         $this->configurePasswordPolicy();
         $this->configureUrls();
@@ -41,6 +43,22 @@ class AppServiceProvider extends ServiceProvider
         if ($paths !== []) {
             $this->loadMigrationsFrom($paths);
         }
+    }
+
+    /**
+     * Teaches Eloquent where factories live for domain models.
+     *
+     * The default convention maps `App\Models\Loan` to
+     * `Database\Factories\LoanFactory`. Naipay's models sit under
+     * `App\Domains\<Domain>\Models`, which the default would resolve to
+     * `Database\Factories\Domains\<Domain>\Models\LoanFactory`. Factories stay
+     * flat in `database/factories`, so only the class name matters.
+     */
+    private function registerFactoryResolution(): void
+    {
+        Factory::guessFactoryNamesUsing(
+            static fn (string $modelName): string => 'Database\\Factories\\'.class_basename($modelName).'Factory'
+        );
     }
 
     /**

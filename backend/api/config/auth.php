@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
+use App\Domains\Identity\Models\Staff;
 
 return [
 
@@ -18,8 +18,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => env('AUTH_GUARD', 'staff'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'staff'),
     ],
 
     /*
@@ -39,10 +39,18 @@ return [
     |
     */
 
+    /*
+     * Naipay is API-only and stateless: administrative clients authenticate
+     * with Sanctum bearer tokens, so there is no session guard.
+     *
+     * The merchant portal will add a second guard here — `merchant`, backed by
+     * its own provider and model — so that a merchant token can never satisfy
+     * an administrative endpoint.
+     */
     'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
+        'staff' => [
+            'driver' => 'sanctum',
+            'provider' => 'staff',
         ],
     ],
 
@@ -64,15 +72,10 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'staff' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => Staff::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*
@@ -94,9 +97,13 @@ return [
     |
     */
 
+    /*
+     * Naipay issues and validates reset tokens itself, in PasswordService, so
+     * this broker is configured for completeness rather than used directly.
+     */
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        'staff' => [
+            'provider' => 'staff',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

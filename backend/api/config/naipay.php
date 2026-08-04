@@ -49,6 +49,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queues
+    |--------------------------------------------------------------------------
+    |
+    | Named by priority. Security-relevant mail (password resets, login alerts)
+    | and receipts go on `high`; bulk exports and report generation go on `low`
+    | so a large report can never delay them.
+    |
+    */
+
+    'queues' => [
+        'high' => env('QUEUE_HIGH', 'naipay-high'),
+        'default' => env('QUEUE_DEFAULT', 'naipay-default'),
+        'low' => env('QUEUE_LOW', 'naipay-reports'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reference number formats
     |--------------------------------------------------------------------------
     |

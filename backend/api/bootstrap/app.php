@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Identity\Http\Middleware\EnforceSessionExpiry;
+use App\Domains\Identity\Http\Middleware\EnsureSecurityStepsCompleted;
 use App\Support\Exceptions\ApiExceptionRenderer;
 use App\Support\Http\Middleware\ApplySecurityHeaders;
 use App\Support\Http\Middleware\AssignCorrelationId;
@@ -35,6 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+
+            // Idle-session timeout, on top of the token's absolute expiry.
+            'session.expiry' => EnforceSessionExpiry::class,
+
+            // Blocks normal use until a forced password change or mandatory
+            // two-factor enrolment has been completed.
+            'security.steps' => EnsureSecurityStepsCompleted::class,
         ]);
 
         // The API never issues a redirect to a login page; unauthenticated

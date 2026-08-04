@@ -39,7 +39,13 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    /*
+     * Empty on purpose. Naipay authenticates every request with a bearer
+     * token; there is no stateful session guard to fall back to, and leaving
+     * `web` here would have Sanctum look for a session guard that no longer
+     * exists.
+     */
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------

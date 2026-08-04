@@ -71,6 +71,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Administrative Console URL
+    |--------------------------------------------------------------------------
+    |
+    | Where the Next.js administrative console is served. Used to build links in
+    | emails — password resets and login alerts — which must point at the
+    | console, never at the API, since the API renders no HTML.
+    |
+    */
+
+    'admin_url' => env('ADMIN_APP_URL', 'http://localhost:3000'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
