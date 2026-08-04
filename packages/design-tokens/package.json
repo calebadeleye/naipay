@@ -1,0 +1,19 @@
+{
+  "name": "@naipay/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Naipay brand palette, typography and spacing tokens.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./css": "./src/tokens.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

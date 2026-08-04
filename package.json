@@ -1,0 +1,23 @@
+{
+  "name": "naipay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Naipay — merchant microfinance administration platform",
+  "workspaces": [
+    "apps/admin-web",
+    "packages/shared-types",
+    "packages/api-client",
+    "packages/validation",
+    "packages/design-tokens"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace apps/admin-web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

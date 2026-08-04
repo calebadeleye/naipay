@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnDeprecation="true"
+         beStrictAboutOutputDuringTests="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerErrors="true"
+         displayDetailsOnPhpunitDeprecations="true"
+>
+    <testsuites>
+        <!--
+            Unit tests are pure: no database, no container, no I/O. All the
+            financial mathematics lives here so it runs in milliseconds and can
+            be exhaustively parameterised.
+        -->
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+
+        <!--
+            Feature tests exercise the HTTP surface and the database. They run
+            against MySQL rather than SQLite deliberately: row locking, DECIMAL
+            precision, strict mode and foreign-key enforcement are precisely
+            what needs testing, and SQLite would give false confidence on all
+            four.
+        -->
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+
+        <!-- Keep hashing cheap so the suite is not dominated by bcrypt. -->
+        <env name="BCRYPT_ROUNDS" value="4"/>
+
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="naipay_testing"/>
+        <env name="DB_URL" value=""/>
+
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="SESSION_DRIVER" value="array"/>
+
+        <!--
+            Jobs run inline so a test asserting on the result of a queued
+            ledger posting or export sees it complete. Tests that specifically
+            cover queueing behaviour fake the queue themselves.
+        -->
+        <env name="QUEUE_CONNECTION" value="sync"/>
+
+        <env name="FILESYSTEM_DISK" value="local"/>
+        <env name="NAIPAY_DOCUMENT_DISK" value="documents"/>
+
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>

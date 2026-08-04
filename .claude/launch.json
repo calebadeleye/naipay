@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "naipay-admin-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "apps/admin-web"],
+      "port": 3000
+    },
+    {
+      "name": "naipay-api",
+      "runtimeExecutable": "/usr/local/opt/php@8.3/bin/php",
+      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+      "port": 8000
+    }
+  ]
+}

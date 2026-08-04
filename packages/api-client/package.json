@@ -1,0 +1,21 @@
+{
+  "name": "@naipay/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed HTTP client for the Naipay API, shared by every Naipay frontend.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@naipay/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

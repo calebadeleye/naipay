@@ -1,0 +1,81 @@
+/**
+ * Naipay design tokens as CSS custom properties.
+ *
+ * Imported by every Naipay frontend so the admin console, merchant portal and
+ * any web view in the mobile app share one source of truth for colour.
+ */
+
+:root {
+  /* Brand */
+  --naipay-brand-50: #eefbf3;
+  --naipay-brand-100: #d6f5e3;
+  --naipay-brand-200: #b0e9cb;
+  --naipay-brand-300: #7dd7ac;
+  --naipay-brand-400: #47bc89;
+  --naipay-brand-500: #22a06b;
+  --naipay-brand-600: #158055;
+  --naipay-brand-700: #126647;
+  --naipay-brand-800: #12513a;
+  --naipay-brand-900: #0f4331;
+  --naipay-brand-950: #04261c;
+
+  /* Neutrals */
+  --naipay-neutral-0: #ffffff;
+  --naipay-neutral-50: #f8fafc;
+  --naipay-neutral-100: #f1f5f9;
+  --naipay-neutral-200: #e2e8f0;
+  --naipay-neutral-300: #cbd5e1;
+  --naipay-neutral-400: #94a3b8;
+  --naipay-neutral-500: #64748b;
+  --naipay-neutral-600: #475569;
+  --naipay-neutral-700: #334155;
+  --naipay-neutral-800: #1e293b;
+  --naipay-neutral-900: #0f172a;
+  --naipay-neutral-950: #020617;
+
+  /* Status */
+  --naipay-success: #15803d;
+  --naipay-success-surface: #dcfce7;
+  --naipay-warning: #b45309;
+  --naipay-warning-surface: #fef3c7;
+  --naipay-danger: #b91c1c;
+  --naipay-danger-surface: #fee2e2;
+  --naipay-info: #1d4ed8;
+  --naipay-info-surface: #dbeafe;
+
+  /* Financial emphasis */
+  --naipay-credit: #15803d;
+  --naipay-debit: #b91c1c;
+  --naipay-overdue: #c2410c;
+
+  /* Semantic surfaces */
+  --naipay-background: var(--naipay-neutral-50);
+  --naipay-surface: var(--naipay-neutral-0);
+  --naipay-border: var(--naipay-neutral-200);
+  --naipay-text: var(--naipay-neutral-900);
+  --naipay-text-muted: var(--naipay-neutral-500);
+  --naipay-sidebar: var(--naipay-neutral-900);
+  --naipay-sidebar-text: var(--naipay-neutral-300);
+
+  /* Typography */
+  --naipay-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --naipay-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Radii */
+  --naipay-radius-sm: 0.25rem;
+  --naipay-radius-md: 0.375rem;
+  --naipay-radius-lg: 0.5rem;
+  --naipay-radius-xl: 0.75rem;
+}
+
+/**
+ * Monetary amounts, references and account numbers.
+ *
+ * Tabular figures keep digits in a fixed-width cell so columns of amounts line
+ * up on every financial table, schedule and statement.
+ */
+.naipay-numeric {
+  font-family: var(--naipay-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}

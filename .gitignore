@@ -1,0 +1,58 @@
+# --- Secrets --------------------------------------------------------------
+# Nothing carrying a credential may ever be committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+auth.json
+
+# --- Dependencies ---------------------------------------------------------
+node_modules/
+vendor/
+
+# --- Build output ---------------------------------------------------------
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Laravel runtime ------------------------------------------------------
+backend/api/storage/*.key
+backend/api/storage/app/documents/
+backend/api/storage/app/public/
+backend/api/storage/framework/cache/data/*
+backend/api/storage/framework/sessions/*
+backend/api/storage/framework/testing/*
+backend/api/storage/framework/views/*
+backend/api/storage/logs/*
+backend/api/bootstrap/cache/*.php
+backend/api/public/storage
+backend/api/public/hot
+!**/.gitignore
+
+# --- Databases and dumps --------------------------------------------------
+*.sqlite
+*.sqlite-journal
+*.sql
+*.dump
+
+# --- Tooling caches -------------------------------------------------------
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+coverage/
+.turbo/
+.eslintcache
+
+# --- Editors and OS -------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.fleet/
+.DS_Store
+Thumbs.db
+*.swp

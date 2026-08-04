@@ -1,0 +1,21 @@
+{
+  "name": "@naipay/validation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zod schemas shared between Naipay frontends, mirroring the API's server-side rules.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^4"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

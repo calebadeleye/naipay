@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+@import '@naipay/design-tokens/css';
+
+/**
+ * Naipay administrative console — global styles.
+ *
+ * The interface is deliberately light-only. A back office is used all day
+ * alongside printed statements and bank portals, and a dark theme would mean
+ * maintaining two sets of status and credit/debit colours for no operational
+ * benefit. Contrast targets WCAG AA throughout.
+ */
+
+@theme inline {
+  --color-brand-50: var(--naipay-brand-50);
+  --color-brand-100: var(--naipay-brand-100);
+  --color-brand-200: var(--naipay-brand-200);
+  --color-brand-300: var(--naipay-brand-300);
+  --color-brand-400: var(--naipay-brand-400);
+  --color-brand-500: var(--naipay-brand-500);
+  --color-brand-600: var(--naipay-brand-600);
+  --color-brand-700: var(--naipay-brand-700);
+  --color-brand-800: var(--naipay-brand-800);
+  --color-brand-900: var(--naipay-brand-900);
+  --color-brand-950: var(--naipay-brand-950);
+
+  --color-success: var(--naipay-success);
+  --color-success-surface: var(--naipay-success-surface);
+  --color-warning: var(--naipay-warning);
+  --color-warning-surface: var(--naipay-warning-surface);
+  --color-danger: var(--naipay-danger);
+  --color-danger-surface: var(--naipay-danger-surface);
+  --color-info: var(--naipay-info);
+  --color-info-surface: var(--naipay-info-surface);
+
+  --color-credit: var(--naipay-credit);
+  --color-debit: var(--naipay-debit);
+  --color-overdue: var(--naipay-overdue);
+
+  --font-sans: var(--font-inter), var(--naipay-font-sans);
+  --font-mono: var(--font-jetbrains-mono), var(--naipay-font-mono);
+}
+
+body {
+  background: var(--naipay-background);
+  color: var(--naipay-text);
+}
+
+/*
+ * Monetary amounts, references and account numbers.
+ *
+ * Tabular figures keep digits in fixed-width cells so columns of amounts align
+ * down a table — essential when an operator is scanning a repayment schedule
+ * or a trial balance for an outlier.
+ */
+.numeric {
+  font-family: var(--naipay-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Keyboard focus must stay clearly visible; operators work these screens by keyboard. */
+:focus-visible {
+  outline: 2px solid var(--naipay-brand-600);
+  outline-offset: 2px;
+}
+
+@media print {
+  /* Receipts and statements print without the console chrome around them. */
+  .no-print {
+    display: none !important;
+  }
+}
