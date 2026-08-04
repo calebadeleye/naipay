@@ -48,9 +48,13 @@ final class EnforceSessionExpiry
 
         $response = $next($request);
 
-        // `last_activity_at` is null for a token issued before this middleware
-        // existed; treat issuance as the last activity rather than expiring it.
-        $lastActivity = $token->last_activity_at ?? $token->created_at;
+        // Only a persisted token has activity worth recording. Sanctum's test
+        // double and its transient token have no row behind them.
+        if ($token->exists !== true) {
+            return $response;
+        }
+
+        $lastActivity = $token->lastActivity();
 
         // Written after the request succeeds, and only once a minute, so an
         // operator working through a list does not generate a write per

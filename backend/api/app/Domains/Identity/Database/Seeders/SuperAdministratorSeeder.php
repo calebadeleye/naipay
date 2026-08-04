@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Identity\Database\Seeders;
 
+use App\Domains\Branches\Models\Branch;
+use App\Domains\Identity\Enums\AccessScope;
 use App\Domains\Identity\Enums\Role as RoleEnum;
 use App\Domains\Identity\Enums\StaffStatus;
 use App\Domains\Identity\Models\Staff;
@@ -52,6 +54,11 @@ final class SuperAdministratorSeeder extends Seeder
                 'last_name' => (string) env('NAIPAY_INITIAL_ADMIN_LAST_NAME', 'Administrator'),
                 'email' => $email,
                 'job_title' => 'Super Administrator',
+                // Organisation-wide reach, and based at the head office seeded
+                // just before this. Without a global scope the first
+                // administrator would only be able to see one branch.
+                'branch_id' => Branch::query()->where('branch_code', 'NPBR-001')->value('id'),
+                'access_scope' => AccessScope::Global,
                 'status' => StaffStatus::Active,
             ]);
 

@@ -42,11 +42,32 @@ abstract class TestCase extends BaseTestCase
         $staff = Staff::factory()->create($attributes);
         $staff->assignRole($role->value);
 
+        // Re-read before acting: a factory instance holds only the columns it
+        // inserted, so attributes that exist purely as database defaults are
+        // absent, and strict mode rightly refuses to read them. A real request
+        // always resolves a fully hydrated model.
+        $staff = $staff->fresh();
+
+        // Roles holding privileged permissions cannot use the console until
+        // two-factor is enrolled — `security.steps` refuses every other
+        // endpoint. Satisfying it here mirrors the only state such an account
+        // can actually be in; the enforcement itself is covered by its own
+        // tests rather than incidentally by every authorisation test.
+        if ($staff->requiresTwoFactor() && ! $staff->hasTwoFactorEnabled()) {
+            $staff->forceFill([
+                'two_factor_secret' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
+                'two_factor_recovery_codes' => [],
+                'two_factor_confirmed_at' => now(),
+            ])->save();
+
+            $staff = $staff->fresh();
+        }
+
         // Abilities mirror what AuthenticationService grants on a real
         // sign-in, so ability-gated routes behave the same under test.
         Sanctum::actingAs($staff, $staff->permissionNames()->all(), 'staff');
 
-        return $staff->fresh();
+        return $staff;
     }
 
     /**
@@ -66,9 +87,11 @@ abstract class TestCase extends BaseTestCase
             $permissions,
         ));
 
+        $staff = $staff->fresh();
+
         Sanctum::actingAs($staff, $staff->permissionNames()->all(), 'staff');
 
-        return $staff->fresh();
+        return $staff;
     }
 
     /**

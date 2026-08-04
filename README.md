@@ -216,7 +216,7 @@ Delivered in phases, each independently deployable and tested before the next be
 | --- | --- | --- |
 | 0 | Project foundation | ✅ Complete |
 | 1 | Authentication and access control | ✅ Complete |
-| 2 | Branch, staff and organisational management | Pending |
+| 2 | Branch, staff and organisational management | ⚠️ API complete; admin screens outstanding |
 | 3 | Business categories | Pending |
 | 4 | Merchant and business onboarding | Pending |
 | 5 | Documents and KYC | Pending |

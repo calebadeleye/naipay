@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Domains\Identity\Models;
 
+use App\Domains\Branches\Models\Branch;
+use App\Domains\Identity\Enums\AccessScope;
 use App\Domains\Identity\Enums\Permission;
 use App\Domains\Identity\Enums\Role as RoleEnum;
 use App\Domains\Identity\Enums\StaffStatus;
+use App\Support\Money\Money;
+use App\Support\Money\MoneyCast;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -69,6 +74,9 @@ class Staff extends Authenticatable
         'username',
         'phone',
         'job_title',
+        'branch_id',
+        'access_scope',
+        'department',
         'status',
         'created_by',
     ];
@@ -91,6 +99,80 @@ class Staff extends Authenticatable
     public function loginAttempts(): HasMany
     {
         return $this->hasMany(LoginAttempt::class);
+    }
+
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Branches this staff member manages. Usually none or one.
+     *
+     * @return HasMany<Branch, $this>
+     */
+    public function managedBranches(): HasMany
+    {
+        return $this->hasMany(Branch::class, 'manager_id');
+    }
+
+    // --- Organisational access ---------------------------------------------
+
+    public function accessScope(): AccessScope
+    {
+        return $this->access_scope ?? AccessScope::Branch;
+    }
+
+    /**
+     * Whether this staff member may see records belonging to a branch.
+     *
+     * A branch-scoped member without a branch assigned can see nothing, which
+     * is the correct failure direction: an unassigned account should not
+     * silently inherit organisation-wide reach.
+     */
+    public function canAccessBranch(?int $branchId): bool
+    {
+        if ($this->accessScope()->isGlobal()) {
+            return true;
+        }
+
+        if ($branchId === null) {
+            return false;
+        }
+
+        // Department scope crosses branches by design — a compliance officer
+        // reviews KYC wherever it was captured.
+        if ($this->accessScope() === AccessScope::Department) {
+            return true;
+        }
+
+        return $this->branch_id === $branchId;
+    }
+
+    /**
+     * How much this staff member may approve.
+     *
+     * Null means no approval authority, which is deliberately distinct from a
+     * limit of zero — the latter is an explicit decision that someone holds the
+     * role but currently approves nothing.
+     */
+    public function canApproveAmount(Money $amount): bool
+    {
+        $limit = $this->approval_limit;
+
+        if ($limit === null) {
+            return false;
+        }
+
+        return $limit->greaterThanOrEqualTo($amount);
+    }
+
+    public function hasApprovalAuthority(): bool
+    {
+        return $this->approval_limit !== null;
     }
 
     // --- Identity ----------------------------------------------------------
@@ -213,6 +295,11 @@ class Staff extends Authenticatable
     {
         return [
             'status' => StaffStatus::class,
+            'access_scope' => AccessScope::class,
+            // Deliberately not mass-assignable: changing an approval limit is a
+            // maker-checked operation set explicitly by the staff service.
+            'approval_limit' => MoneyCast::class,
+            'suspended_at' => 'datetime',
             'must_change_password' => 'boolean',
             'password' => 'hashed',
             // Encrypted at rest: a database dump must not yield working
