@@ -13,6 +13,7 @@ import {
   Landmark,
   Receipt,
   Banknote,
+  BookOpen,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -58,7 +59,10 @@ export const navSections: NavSection[] = [
   },
   {
     label: 'Finance',
-    items: [{ label: 'Bank accounts', href: '/bank-accounts', icon: Banknote }],
+    items: [
+      { label: 'Bank accounts', href: '/bank-accounts', icon: Banknote },
+      { label: 'Ledger', href: '/ledger', icon: BookOpen },
+    ],
   },
   {
     label: 'Reports',
