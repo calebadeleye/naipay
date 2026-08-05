@@ -230,7 +230,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 10 | Designated bank accounts | ✅ API complete |
 | 11 | Double-entry ledger | ✅ API complete |
 | 12 | Manual bank reconciliation | ✅ API complete |
-| 13 | Dashboard and reports | Pending |
+| 13 | Dashboard and reports | ✅ API complete |
 | 14 | Notifications and receipts | Pending |
 | 15 | Audit and compliance | Pending |
 | 16 | Administrative UI | Pending |
