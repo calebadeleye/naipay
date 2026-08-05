@@ -1,6 +1,5 @@
 'use client';
 
-import { ApiError } from '@naipay/api-client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -110,7 +109,6 @@ export default function RepaymentDetailPage() {
   const verify = useVerifyRepayment(id);
   const reject = useRejectRepayment(id);
   const approve = useApproveRepayment(id);
-  const approveError = approve.error instanceof ApiError ? approve.error : null;
 
   return (
     <QueryState isLoading={isLoading} error={error}>
@@ -145,11 +143,6 @@ export default function RepaymentDetailPage() {
                 <p className="text-sm text-slate-500">No further transitions — this repayment is in a terminal state.</p>
               ) : null}
             </div>
-            {approveError ? (
-              <Alert tone="error" reference={approveError.correlationId}>
-                {approveError.message}
-              </Alert>
-            ) : null}
             {repayment.rejection ? (
               <p className="mt-4 text-sm text-danger">Rejection reason: {repayment.rejection.reason}</p>
             ) : null}

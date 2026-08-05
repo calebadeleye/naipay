@@ -1,6 +1,5 @@
 'use client';
 
-import { ApiError } from '@naipay/api-client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -171,7 +170,6 @@ export default function LoanDetailPage() {
 
   const { data: loan, isLoading, error } = useLoan(id);
   const approveLoan = useApproveLoan(id);
-  const approveError = approveLoan.error instanceof ApiError ? approveLoan.error : null;
 
   return (
     <QueryState isLoading={isLoading} error={error}>
@@ -195,11 +193,6 @@ export default function LoanDetailPage() {
                 <p className="text-sm text-slate-500">No further transitions — this loan is in a terminal state.</p>
               ) : null}
             </div>
-            {approveError ? (
-              <Alert tone="error" reference={approveError.correlationId}>
-                {approveError.message}
-              </Alert>
-            ) : null}
           </Card>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

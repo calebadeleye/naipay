@@ -14,6 +14,7 @@ import {
   Receipt,
   Banknote,
   BookOpen,
+  ListChecks,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -62,6 +63,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Bank accounts', href: '/bank-accounts', icon: Banknote },
       { label: 'Ledger', href: '/ledger', icon: BookOpen },
+      { label: 'Reconciliation', href: '/reconciliation', icon: ListChecks },
     ],
   },
   {
