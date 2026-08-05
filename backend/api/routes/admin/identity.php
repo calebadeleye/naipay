@@ -44,6 +44,12 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::get('me', [AuthenticationController::class, 'me'])->name('me');
         Route::post('logout', [AuthenticationController::class, 'logout'])->name('logout');
 
+        // Throttled the same as sign-in: the one place a stolen session,
+        // without the password, gets unlimited guesses otherwise.
+        Route::post('reauthenticate', [AuthenticationController::class, 'reauthenticate'])
+            ->middleware('throttle:authentication')
+            ->name('reauthenticate');
+
         Route::post('password', [PasswordController::class, 'change'])->name('password.change');
 
         Route::prefix('two-factor')->name('two-factor.')->group(function (): void {

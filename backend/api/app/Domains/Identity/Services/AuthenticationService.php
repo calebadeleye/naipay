@@ -153,6 +153,43 @@ final class AuthenticationService
     }
 
     /**
+     * Proves the caller is still who they say they are, at the point of a
+     * sensitive action, independent of the session already being valid.
+     *
+     * Marks only the token used for this request — every other session an
+     * operator holds still requires its own step-up when it reaches one of
+     * these operations.
+     *
+     * @throws AuthenticationFailedException
+     */
+    public function reauthenticate(Staff $staff, string $password, ?string $twoFactorCode, RequestContext $context): void
+    {
+        if (! Hash::check($password, $staff->password)) {
+            $this->registerFailure($staff);
+            $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_CREDENTIALS, $context);
+
+            throw AuthenticationFailedException::invalidCredentials();
+        }
+
+        if ($staff->hasTwoFactorEnabled()) {
+            if ($twoFactorCode === null || ! $this->twoFactor->verifyChallenge($staff, $twoFactorCode)) {
+                $this->registerFailure($staff);
+                $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_TWO_FACTOR, $context);
+
+                throw AuthenticationFailedException::invalidTwoFactorCode();
+            }
+        }
+
+        $this->clearFailures($staff);
+
+        $token = $staff->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->forceFill(['reauthenticated_at' => now()])->save();
+        }
+    }
+
+    /**
      * Revokes the token used for the current request.
      */
     public function signOut(Staff $staff): void

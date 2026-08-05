@@ -59,6 +59,7 @@ final class LoanDisbursementService
         }
 
         $this->makerChecker->assertCanApprove($actor, new LoanDisbursementApproval($loan));
+        $this->makerChecker->assertRecentlyReauthenticated($actor, 'loan.disburse');
 
         if (! $bankAccount->canTransact()) {
             throw new DomainException(

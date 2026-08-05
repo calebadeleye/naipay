@@ -8,8 +8,8 @@ use App\Domains\Accounts\Approvals\BankAccountApproval;
 use App\Domains\Accounts\Enums\BankAccountPurpose;
 use App\Domains\Accounts\Enums\BankAccountStatus;
 use App\Domains\Accounts\Models\BankAccount;
-use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
+use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
 use App\Support\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +99,7 @@ final class BankAccountService
         }
 
         $this->makerChecker->assertCanApprove($actor, new BankAccountApproval($account));
+        $this->makerChecker->assertRecentlyReauthenticated($actor, 'bank_account.change');
 
         return DB::transaction(function () use ($account, $actor): BankAccount {
             $before = $account->getAttributes();

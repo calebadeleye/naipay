@@ -225,6 +225,7 @@ final class RepaymentService
         }
 
         $this->makerChecker->assertCanApprove($actor, new RepaymentReversalApproval($repayment));
+        $this->makerChecker->assertRecentlyReauthenticated($actor, 'repayment.reverse');
 
         return DB::transaction(function () use ($repayment, $reason, $actor): Repayment {
             /** @var Loan $loan */

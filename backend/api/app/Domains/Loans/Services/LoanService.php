@@ -79,6 +79,7 @@ final class LoanService
         }
 
         $this->makerChecker->assertCanApprove($actor, new LoanWriteOffApproval($loan));
+        $this->makerChecker->assertRecentlyReauthenticated($actor, 'loan.write_off');
 
         return DB::transaction(function () use ($loan, $reason, $actor): Loan {
             $before = $loan->getAttributes();

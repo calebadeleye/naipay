@@ -330,6 +330,10 @@ return [
             'settings.manage',
         ],
 
+        // How long a step-up authentication remains valid before the next
+        // sensitive operation demands another one.
+        'reauthentication_window_minutes' => env('NAIPAY_REAUTHENTICATION_WINDOW_MINUTES', 15),
+
         // Request keys scrubbed from logs and audit payloads.
         'redacted_keys' => [
             'password',

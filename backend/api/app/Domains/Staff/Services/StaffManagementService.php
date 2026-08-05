@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Staff\Services;
 
+use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Branches\Models\Branch;
 use App\Domains\Identity\Enums\StaffStatus;
@@ -33,6 +34,7 @@ final class StaffManagementService
         private readonly AuditLogger $audit,
         private readonly PasswordService $passwords,
         private readonly AuthenticationService $authentication,
+        private readonly MakerCheckerGuard $makerChecker,
     ) {}
 
     /**
@@ -254,6 +256,7 @@ final class StaffManagementService
         // available to a compromised account, so it is refused outright rather
         // than merely permission-gated.
         $this->assertNotSelf($staff, $actor, 'change your own roles');
+        $this->makerChecker->assertRecentlyReauthenticated($actor, 'staff.role_change');
 
         $apply = function () use ($staff, $roles, $actor): Staff {
             $previous = $staff->roleNames()->all();

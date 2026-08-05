@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Identity\Http\Controllers;
 
 use App\Domains\Identity\Http\Requests\LoginRequest;
+use App\Domains\Identity\Http\Requests\ReauthenticateRequest;
 use App\Domains\Identity\Http\Requests\TwoFactorChallengeRequest;
 use App\Domains\Identity\Http\Resources\StaffResource;
 use App\Domains\Identity\Models\Staff;
@@ -81,6 +82,25 @@ final class AuthenticationController
             data: new StaffResource($staff),
             message: 'Current staff member retrieved.',
         );
+    }
+
+    /**
+     * Proves the caller is still who they say they are, ahead of a sensitive
+     * action naipay.security.reauthentication_required_operations names.
+     */
+    public function reauthenticate(ReauthenticateRequest $request): JsonResponse
+    {
+        /** @var Staff $staff */
+        $staff = $request->user();
+
+        $this->authentication->reauthenticate(
+            $staff,
+            $request->string('password')->toString(),
+            $request->filled('code') ? $request->string('code')->toString() : null,
+            RequestContext::fromRequest($request),
+        );
+
+        return ApiResponse::success(message: 'Reauthentication successful.');
     }
 
     /**

@@ -7,7 +7,10 @@ namespace App\Domains\Approvals\Services;
 use App\Domains\Approvals\Contracts\RequiresMakerChecker;
 use App\Domains\Identity\Models\Staff;
 use App\Support\Exceptions\MakerCheckerViolationException;
+use App\Support\Exceptions\ReauthenticationRequiredException;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Enforces segregation of duties: a staff member may never approve an
@@ -90,5 +93,49 @@ final class MakerCheckerGuard
         $operations = config('naipay.security.reauthentication_required_operations', []);
 
         return in_array($operation, $operations, true);
+    }
+
+    /**
+     * Refuses an operation named in naipay.security.
+     * reauthentication_required_operations unless the actor's current token
+     * proved their password (and 2FA code, if enabled) again within
+     * naipay.security.reauthentication_window_minutes.
+     *
+     * `Sanctum::actingAs()` installs a Mockery mock of the configured token
+     * model — a real class, so `instanceof PersonalAccessToken` alone does
+     * not distinguish it, but `exists` (Eloquent's own "was this hydrated
+     * from, or saved to, the database" flag, declared `false` on the base
+     * Model class and never true for an object Mockery constructs without
+     * running the real constructor) does. It is treated as already
+     * satisfying this, the same way it answers every `can()` ability check
+     * with true regardless of what was actually granted. A real request
+     * always resolves a real, database-backed token.
+     *
+     * @throws ReauthenticationRequiredException
+     */
+    public function assertRecentlyReauthenticated(Staff $actor, string $operation): void
+    {
+        if (! $this->requiresReauthentication($operation)) {
+            return;
+        }
+
+        $token = $actor->currentAccessToken();
+
+        if (! $token instanceof PersonalAccessToken || ! $token->exists) {
+            return;
+        }
+
+        $windowMinutes = (int) config('naipay.security.reauthentication_window_minutes', 15);
+
+        if ($token->reauthenticated_at instanceof CarbonInterface && $token->reauthenticated_at->addMinutes($windowMinutes)->isFuture()) {
+            return;
+        }
+
+        Log::info('Reauthentication required before proceeding.', [
+            'operation' => $operation,
+            'staff_id' => $actor->getKey(),
+        ]);
+
+        throw new ReauthenticationRequiredException($operation);
     }
 }

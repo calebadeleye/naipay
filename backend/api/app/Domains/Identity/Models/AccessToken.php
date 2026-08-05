@@ -20,6 +20,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property Carbon|null $last_activity_at
+ * @property Carbon|null $reauthenticated_at
  */
 // Deliberately not final: Sanctum::actingAs() substitutes a mock of the
 // configured token model, which a final class cannot provide.
@@ -43,6 +44,7 @@ class AccessToken extends PersonalAccessToken
         'ip_address',
         'user_agent',
         'last_activity_at',
+        'reauthenticated_at',
     ];
 
     /**
@@ -79,6 +81,7 @@ class AccessToken extends PersonalAccessToken
     {
         return array_merge(parent::casts(), [
             'last_activity_at' => 'datetime',
+            'reauthenticated_at' => 'datetime',
         ]);
     }
 }
