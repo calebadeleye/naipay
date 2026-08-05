@@ -9,6 +9,7 @@ use App\Domains\Businesses\Database\Seeders\BusinessCategorySeeder;
 use App\Domains\Documents\Database\Seeders\DocumentTypeSeeder;
 use App\Domains\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Domains\Identity\Database\Seeders\SuperAdministratorSeeder;
+use App\Domains\LoanProducts\Database\Seeders\LoanProductSeeder;
 use Illuminate\Database\Seeder;
 
 /**
@@ -30,6 +31,7 @@ final class DatabaseSeeder extends Seeder
             HeadOfficeSeeder::class,
             BusinessCategorySeeder::class,
             DocumentTypeSeeder::class,
+            LoanProductSeeder::class,
             SuperAdministratorSeeder::class,
         ]);
     }

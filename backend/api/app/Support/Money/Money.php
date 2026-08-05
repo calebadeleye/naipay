@@ -126,6 +126,26 @@ final class Money implements JsonSerializable, Stringable
         return new self(self::divideRounded($product, $scaled['denominator'], $rounding), $this->currency);
     }
 
+    /**
+     * Takes a percentage of this amount.
+     *
+     * Kept separate from multiplyBy so rates can be stored and read the way
+     * people state them — "20%" rather than "0.20". The division by 100 folds
+     * into the integer denominator, so no intermediate rounding occurs and
+     * 20% of ₦1,000,000 is exactly ₦200,000, never ₦199,999.99.
+     */
+    public function percentageOf(string|int|float $percentage, RoundingMode $rounding = RoundingMode::HalfUp): self
+    {
+        $scaled = self::scaleFactor(self::stringify($percentage));
+
+        $product = $this->minorUnits * $scaled['numerator'];
+
+        return new self(
+            self::divideRounded($product, $scaled['denominator'] * 100, $rounding),
+            $this->currency,
+        );
+    }
+
     public function divideBy(int $divisor, RoundingMode $rounding = RoundingMode::HalfUp): self
     {
         if ($divisor === 0) {

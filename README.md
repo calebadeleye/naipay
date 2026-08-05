@@ -223,7 +223,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 3 | Business categories | ✅ API complete |
 | 4 | Merchant and business onboarding | ✅ API complete |
 | 5 | Documents and KYC | ✅ API complete |
-| 6 | Loan products | Pending |
+| 6 | Loan products | ✅ API complete |
 | 7 | Loan applications | Pending |
 | 8 | Loans and disbursement | Pending |
 | 9 | Manual repayments | Pending |

@@ -213,6 +213,24 @@ return [
         // Portfolio at risk is measured from this many days past due.
         'par_threshold_days' => env('NAIPAY_PAR_THRESHOLD_DAYS', 30),
 
+        /*
+         * Public holidays, as Y-m-d.
+         *
+         * Daily-collection instalments never fall on these, nor at the weekend.
+         * Kept in configuration because Nigerian public holidays move with the
+         * lunar calendar and are sometimes announced only days in advance —
+         * waiting for a deployment would put instalments on a day nobody is
+         * collecting.
+         */
+        'public_holidays' => [
+            // '2026-01-01', // New Year's Day
+            // '2026-05-01', // Workers' Day
+            // '2026-06-12', // Democracy Day
+            // '2026-10-01', // Independence Day
+            // '2026-12-25', // Christmas Day
+            // '2026-12-26', // Boxing Day
+        ],
+
         // A loan application expires if it is not approved within this window.
         'application_validity_days' => env('NAIPAY_APPLICATION_VALIDITY_DAYS', 60),
     ],
