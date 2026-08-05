@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Users,
   Store,
+  Package,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -41,6 +42,10 @@ export const navSections: NavSection[] = [
       { label: 'Merchants', href: '/merchants', icon: Users },
       { label: 'Businesses', href: '/businesses', icon: Store },
     ],
+  },
+  {
+    label: 'Lending',
+    items: [{ label: 'Loan products', href: '/loan-products', icon: Package }],
   },
   {
     label: 'Reports',
