@@ -6,7 +6,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
 
-const button = cva(
+export const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-60',
   {
     variants: {
@@ -33,7 +33,7 @@ const button = cva(
 
 interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof button> {
+    VariantProps<typeof buttonVariants> {
   loading?: boolean;
   children: ReactNode;
 }
@@ -54,7 +54,7 @@ export function Button({
       // how duplicate financial actions get created.
       disabled={disabled || loading}
       aria-busy={loading}
-      className={cn(button({ variant, size, fullWidth }), className)}
+      className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       {...props}
     >
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

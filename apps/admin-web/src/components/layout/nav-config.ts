@@ -6,6 +6,8 @@ import {
   Wallet,
   TrendingDown,
   ShieldCheck,
+  Users,
+  Store,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -22,15 +24,23 @@ export interface NavSection {
 /**
  * Navigation for what actually exists today.
  *
- * Every other domain phase 2 onward — merchants, loan applications, loans,
+ * Every domain still without a screen — loan applications, loans,
  * repayments, bank accounts, the ledger, reconciliation, receipts, the audit
  * log — is deliberately absent rather than linked as a placeholder: a dead
- * link in a financial console reads as broken, not as "coming soon".
+ * link in a financial console reads as broken, not as "coming soon". Add an
+ * entry here the moment its route lands, not before.
  */
 export const navSections: NavSection[] = [
   {
     label: 'Overview',
     items: [{ label: 'Dashboard', href: '/', icon: LayoutDashboard }],
+  },
+  {
+    label: 'Merchants',
+    items: [
+      { label: 'Merchants', href: '/merchants', icon: Users },
+      { label: 'Businesses', href: '/businesses', icon: Store },
+    ],
   },
   {
     label: 'Reports',
