@@ -14,6 +14,7 @@ use App\Domains\Ledger\Support\StandardAccounts;
 use App\Domains\Loans\Enums\LoanScheduleEntryStatus;
 use App\Domains\Loans\Models\Loan;
 use App\Domains\Loans\Models\LoanScheduleEntry;
+use App\Domains\Receipts\Services\ReceiptService;
 use App\Domains\Repayments\Approvals\RepaymentApproval;
 use App\Domains\Repayments\Approvals\RepaymentReversalApproval;
 use App\Domains\Repayments\Data\AllocationLine;
@@ -21,6 +22,7 @@ use App\Domains\Repayments\Data\AllocationPlan;
 use App\Domains\Repayments\Enums\RepaymentStatus;
 use App\Domains\Repayments\Models\Repayment;
 use App\Domains\Repayments\Models\RepaymentAllocation;
+use App\Domains\Repayments\Notifications\RepaymentReceiptNotification;
 use App\Support\Exceptions\DomainException;
 use App\Support\Money\Money;
 use App\Support\Sequences\ReferenceGenerator;
@@ -48,6 +50,7 @@ final class RepaymentService
         private readonly MakerCheckerGuard $makerChecker,
         private readonly RepaymentAllocationService $allocator,
         private readonly LedgerPostingService $ledger,
+        private readonly ReceiptService $receipts,
     ) {}
 
     /**
@@ -145,7 +148,7 @@ final class RepaymentService
 
         return DB::transaction(function () use ($repayment, $actor): Repayment {
             /** @var Loan $loan */
-            $loan = Loan::query()->lockForUpdate()->findOrFail($repayment->loan_id);
+            $loan = Loan::query()->lockForUpdate()->with('merchant')->findOrFail($repayment->loan_id);
 
             $plan = $this->allocator->plan($loan, $repayment->amount, $repayment->payment_date);
 
@@ -194,7 +197,16 @@ final class RepaymentService
 
             $this->audit->recordChange('repayment.approved', self::MODULE, $repayment, $before, actor: $actor);
 
-            return $repayment->fresh('allocations');
+            $repayment = $repayment->fresh('allocations');
+
+            // An approved repayment without a receipt is a state that must
+            // never exist, the same reasoning LoanCreationService is called
+            // from inside LoanApplicationService::approve() rather than as a
+            // separate step a caller could forget.
+            $receipt = $this->receipts->generateFor($repayment);
+            $loan->merchant?->notify(new RepaymentReceiptNotification($repayment, $receipt));
+
+            return $repayment;
         });
     }
 

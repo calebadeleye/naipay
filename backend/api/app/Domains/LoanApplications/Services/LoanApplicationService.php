@@ -11,6 +11,8 @@ use App\Domains\LoanApplications\Approvals\LoanApplicationApproval;
 use App\Domains\LoanApplications\Enums\LoanApplicationStatus;
 use App\Domains\LoanApplications\Models\Guarantor;
 use App\Domains\LoanApplications\Models\LoanApplication;
+use App\Domains\LoanApplications\Notifications\LoanApplicationApprovedNotification;
+use App\Domains\LoanApplications\Notifications\LoanApplicationRejectedNotification;
 use App\Domains\LoanProducts\Models\LoanProduct;
 use App\Domains\Loans\Services\LoanCreationService;
 use App\Support\Exceptions\DomainException;
@@ -221,6 +223,9 @@ final class LoanApplicationService
             // forget.
             $this->loans->createFromApplication($approved, $actor);
 
+            $approved->loadMissing('merchant');
+            $approved->merchant?->notify(new LoanApplicationApprovedNotification($approved));
+
             return $approved;
         });
     }
@@ -229,7 +234,7 @@ final class LoanApplicationService
     {
         $this->assertTransition($application, LoanApplicationStatus::Rejected);
 
-        return $this->transition(
+        $rejected = $this->transition(
             $application,
             LoanApplicationStatus::Rejected,
             'loan_application.rejected',
@@ -241,6 +246,11 @@ final class LoanApplicationService
                 'rejected_at' => now(),
             ],
         );
+
+        $rejected->loadMissing('merchant');
+        $rejected->merchant?->notify(new LoanApplicationRejectedNotification($rejected, $reason));
+
+        return $rejected;
     }
 
     /**

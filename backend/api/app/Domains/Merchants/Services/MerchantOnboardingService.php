@@ -13,6 +13,7 @@ use App\Domains\Merchants\Enums\KycStatus;
 use App\Domains\Merchants\Enums\MerchantStatus;
 use App\Domains\Merchants\Enums\OnboardingStatus;
 use App\Domains\Merchants\Models\Merchant;
+use App\Domains\Merchants\Notifications\MerchantApprovedNotification;
 use App\Support\Exceptions\DomainException;
 use App\Support\Security\BlindIndex;
 use App\Support\Sequences\ReferenceGenerator;
@@ -223,7 +224,10 @@ final class MerchantOnboardingService
             // leave a merchant approved but accountless.
             $this->accounts->openFor($approved, $actor);
 
-            return $approved->fresh();
+            $approved = $approved->fresh();
+            $approved->notify(new MerchantApprovedNotification($approved));
+
+            return $approved;
         });
     }
 

@@ -19,6 +19,7 @@ use App\Domains\Loans\Approvals\LoanDisbursementApproval;
 use App\Domains\Loans\Enums\LoanStatus;
 use App\Domains\Loans\Models\Loan;
 use App\Domains\Loans\Models\LoanScheduleEntry;
+use App\Domains\Loans\Notifications\LoanDisbursedNotification;
 use App\Support\Exceptions\DomainException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -139,7 +140,10 @@ final class LoanDisbursementService
 
             $this->audit->recordChange('loan.disbursed', self::MODULE, $loan, $before, actor: $actor);
 
-            return $loan->fresh('scheduleEntries');
+            $loan = $loan->fresh(['scheduleEntries', 'merchant']);
+            $loan->merchant?->notify(new LoanDisbursedNotification($loan));
+
+            return $loan;
         });
     }
 }

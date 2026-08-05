@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * A merchant — the individual or principal account holder.
@@ -46,7 +47,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Merchant extends Model
 {
     /** @use HasFactory<MerchantFactory> */
-    use BelongsToBranch, HasFactory, SoftDeletes;
+    use BelongsToBranch, HasFactory, Notifiable, SoftDeletes;
 
     public const BVN_INDEX_DOMAIN = 'merchant.bvn';
 
