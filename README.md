@@ -232,7 +232,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 12 | Manual bank reconciliation | ✅ API complete |
 | 13 | Dashboard and reports | Pending |
 | 14 | Notifications and receipts | ✅ API complete |
-| 15 | Audit and compliance | Pending |
+| 15 | Audit and compliance | ✅ API complete |
 | 16 | Administrative UI | Pending |
 | 17 | Security | Pending |
 | 18 | Testing | Pending |
