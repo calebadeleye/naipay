@@ -9,6 +9,7 @@ use App\Domains\Businesses\Database\Seeders\BusinessCategorySeeder;
 use App\Domains\Documents\Database\Seeders\DocumentTypeSeeder;
 use App\Domains\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Domains\Identity\Database\Seeders\SuperAdministratorSeeder;
+use App\Domains\Ledger\Database\Seeders\ChartOfAccountsSeeder;
 use App\Domains\LoanProducts\Database\Seeders\LoanProductSeeder;
 use Illuminate\Database\Seeder;
 
@@ -16,8 +17,8 @@ use Illuminate\Database\Seeder;
  * Reference data required for Naipay to function.
  *
  * Everything here is idempotent and safe to run on every deploy — roles,
- * permissions, and later business categories, document types and the chart of
- * accounts are configuration, not sample data.
+ * permissions, business categories, document types and the chart of accounts
+ * are configuration, not sample data.
  *
  * Development fixtures (merchants, loans, repayments) belong in a separate
  * seeder that never runs in production.
@@ -32,6 +33,7 @@ final class DatabaseSeeder extends Seeder
             BusinessCategorySeeder::class,
             DocumentTypeSeeder::class,
             LoanProductSeeder::class,
+            ChartOfAccountsSeeder::class,
             SuperAdministratorSeeder::class,
         ]);
     }

@@ -12,6 +12,7 @@ use App\Domains\LoanApplications\Enums\LoanApplicationStatus;
 use App\Domains\LoanApplications\Models\Guarantor;
 use App\Domains\LoanApplications\Models\LoanApplication;
 use App\Domains\LoanProducts\Models\LoanProduct;
+use App\Domains\Loans\Services\LoanCreationService;
 use App\Support\Exceptions\DomainException;
 use App\Support\Money\Money;
 use App\Support\Sequences\ReferenceGenerator;
@@ -34,6 +35,7 @@ final class LoanApplicationService
         private readonly ReferenceGenerator $references,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly LoanCreationService $loans,
     ) {}
 
     /**
@@ -197,20 +199,30 @@ final class LoanApplicationService
 
         $this->assertProductAccepts($product, $amount, $tenor);
 
-        return $this->transition(
-            $application,
-            LoanApplicationStatus::Approved,
-            'loan_application.approved',
-            $actor,
-            extra: [
-                'approved_amount' => $amount,
-                'approved_tenor' => $tenor,
-                'approved_interest_rate' => $product->interest_rate,
-                'approved_by' => $actor->getKey(),
-                'approved_at' => now(),
-                'decision_reason' => null,
-            ],
-        );
+        return DB::transaction(function () use ($application, $amount, $tenor, $product, $actor): LoanApplication {
+            $approved = $this->transition(
+                $application,
+                LoanApplicationStatus::Approved,
+                'loan_application.approved',
+                $actor,
+                extra: [
+                    'approved_amount' => $amount,
+                    'approved_tenor' => $tenor,
+                    'approved_interest_rate' => $product->interest_rate,
+                    'approved_by' => $actor->getKey(),
+                    'approved_at' => now(),
+                    'decision_reason' => null,
+                ],
+            );
+
+            // An approved application without a loan behind it is a state
+            // that must never exist, so the loan is created here, inside the
+            // same transaction, rather than as a separate step a caller could
+            // forget.
+            $this->loans->createFromApplication($approved, $actor);
+
+            return $approved;
+        });
     }
 
     public function reject(LoanApplication $application, string $reason, Staff $actor): LoanApplication
