@@ -69,4 +69,18 @@ Route::middleware(['auth:staff', 'session.expiry', 'security.steps'])->group(fun
             ->middleware('permission:'.Permission::DocumentsUpload->value)
             ->name('documents.store');
     });
+
+    Route::prefix('loan-applications/{application}/guarantors/{guarantor}')
+        ->name('loan-applications.guarantors.')
+        ->whereNumber('application')
+        ->whereNumber('guarantor')
+        ->group(function (): void {
+            Route::get('documents', [DocumentController::class, 'indexForGuarantor'])
+                ->middleware('permission:'.Permission::DocumentsView->value)
+                ->name('documents.index');
+
+            Route::post('documents', [DocumentController::class, 'storeForGuarantor'])
+                ->middleware('permission:'.Permission::DocumentsUpload->value)
+                ->name('documents.store');
+        });
 });

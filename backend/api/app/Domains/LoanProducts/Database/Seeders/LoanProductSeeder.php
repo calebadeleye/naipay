@@ -18,11 +18,11 @@ use Illuminate\Support\Facades\DB;
  * Three products, distinguished by how often the merchant repays:
  *
  *   Daily    20% flat  — borrow ₦100,000, repay ₦120,000
- *   Weekly   40% flat  — borrow ₦1,000,000, repay ₦1,400,000
- *   Monthly  40% flat  — priced as weekly
+ *   Weekly    4% flat  — borrow ₦1,000,000, repay ₦1,040,000
+ *   Monthly   4% flat  — priced as weekly
  *
- * Daily collection is cheaper because the money comes back every working day,
- * which is a materially lower risk than waiting a month for it.
+ * Daily is priced separately from the rest; every other product is a flat 4%
+ * regardless of tenor unit.
  *
  * The rate is flat: charged once on the amount borrowed, unchanged by how long
  * the loan runs. That is what lets the tenor be agreed per loan rather than
@@ -65,7 +65,7 @@ final class LoanProductSeeder extends Seeder
                 'default_tenor' => 12,
                 'tenor_unit' => TenorUnit::Weeks,
                 'interest_method' => InterestMethod::Flat,
-                'interest_rate' => '40.0000',
+                'interest_rate' => '4.0000',
                 'repayment_frequency' => RepaymentFrequency::Weekly,
                 'display_order' => 20,
             ]);
@@ -81,7 +81,7 @@ final class LoanProductSeeder extends Seeder
                 'default_tenor' => 6,
                 'tenor_unit' => TenorUnit::Months,
                 'interest_method' => InterestMethod::Flat,
-                'interest_rate' => '40.0000',
+                'interest_rate' => '4.0000',
                 'repayment_frequency' => RepaymentFrequency::Monthly,
                 'display_order' => 30,
             ]);

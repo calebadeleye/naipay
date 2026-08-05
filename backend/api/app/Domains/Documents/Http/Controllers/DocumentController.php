@@ -13,6 +13,8 @@ use App\Domains\Documents\Models\DocumentType;
 use App\Domains\Documents\Services\DocumentService;
 use App\Domains\Documents\Services\DocumentStorage;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\LoanApplications\Models\Guarantor;
+use App\Domains\LoanApplications\Models\LoanApplication;
 use App\Domains\Merchants\Models\Merchant;
 use App\Support\Http\ApiResponse;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +23,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Documents attached to merchants and businesses.
+ * Documents attached to merchants, businesses and loan application
+ * guarantors.
  *
  * Files are never publicly addressable. Every retrieval passes through the
  * permission check and the branch scope, and is written to the audit trail —
@@ -89,6 +92,20 @@ final class DocumentController
         $this->authoriseAccess($request, $business->merchant->branch_id);
 
         return $this->upload($request, $business);
+    }
+
+    public function indexForGuarantor(Request $request, LoanApplication $application, Guarantor $guarantor): JsonResponse
+    {
+        $this->authoriseGuarantorAccess($request, $application, $guarantor);
+
+        return $this->listFor($request, $guarantor, DocumentOwnerType::Guarantor->value);
+    }
+
+    public function storeForGuarantor(UploadDocumentRequest $request, LoanApplication $application, Guarantor $guarantor): JsonResponse
+    {
+        $this->authoriseGuarantorAccess($request, $application, $guarantor);
+
+        return $this->upload($request, $guarantor);
     }
 
     public function show(Request $request, Document $document): JsonResponse
@@ -233,10 +250,26 @@ final class DocumentController
         $branchId = match (true) {
             $owner instanceof Merchant => $owner->branch_id,
             $owner instanceof Business => $owner->merchant?->branch_id,
+            $owner instanceof Guarantor => $owner->loanApplication?->branch_id,
             default => null,
         };
 
         $this->authoriseAccess($request, $branchId);
+    }
+
+    /**
+     * Route model binding resolves a guarantor by id regardless of which
+     * application it belongs to, and regardless of branch.
+     */
+    private function authoriseGuarantorAccess(Request $request, LoanApplication $application, Guarantor $guarantor): void
+    {
+        abort_unless(
+            $guarantor->loan_application_id === $application->id,
+            404,
+            'The requested guarantor was not found.',
+        );
+
+        $this->authoriseAccess($request, $application->branch_id);
     }
 
     private function authoriseAccess(Request $request, ?int $branchId): void

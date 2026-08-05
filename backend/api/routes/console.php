@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Documents\Console\ExpireLapsedDocumentsCommand;
+use App\Domains\LoanApplications\Console\ExpireLapsedLoanApplicationsCommand;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -26,5 +27,15 @@ use Illuminate\Support\Facades\Schedule;
  */
 Schedule::command(ExpireLapsedDocumentsCommand::class)
     ->dailyAt('00:15')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+/*
+ * Expire loan applications past their validity window shortly after the
+ * document sweep, so a merchant's KYC does not lapse mid-way through a
+ * decision this same run would otherwise expire.
+ */
+Schedule::command(ExpireLapsedLoanApplicationsCommand::class)
+    ->dailyAt('00:20')
     ->withoutOverlapping()
     ->onOneServer();

@@ -30,8 +30,8 @@ final class LoanProductTest extends TestCase
         $monthly = LoanProduct::query()->where('code', 'NPD-MONTHLY')->firstOrFail();
 
         $this->assertSame('20.0000', $daily->interest_rate);
-        $this->assertSame('40.0000', $weekly->interest_rate);
-        $this->assertSame('40.0000', $monthly->interest_rate);
+        $this->assertSame('4.0000', $weekly->interest_rate);
+        $this->assertSame('4.0000', $monthly->interest_rate);
 
         $this->assertSame('daily', $daily->repayment_frequency->value);
         $this->assertSame('weekly', $weekly->repayment_frequency->value);
@@ -123,7 +123,7 @@ final class LoanProductTest extends TestCase
     }
 
     #[Test]
-    public function a_one_million_naira_weekly_loan_repays_one_point_four_million(): void
+    public function a_one_million_naira_weekly_loan_repays_one_point_zero_four_million(): void
     {
         $this->actingAsRole(Role::LoanOfficer);
         $this->seed(LoanProductSeeder::class);
@@ -135,7 +135,7 @@ final class LoanProductTest extends TestCase
             'tenor' => 12,
         ])->assertOk();
 
-        $this->assertSame('1400000.00', $response->json('data.summary.total_payable.amount'));
+        $this->assertSame('1040000.00', $response->json('data.summary.total_payable.amount'));
     }
 
     #[Test]

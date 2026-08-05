@@ -57,7 +57,7 @@ final class LoanProductFactory extends Factory
             'name' => 'Weekly Repayment',
             'repayment_frequency' => RepaymentFrequency::Weekly,
             'tenor_unit' => TenorUnit::Weeks,
-            'interest_rate' => '40.0000',
+            'interest_rate' => '4.0000',
             'minimum_tenor' => 4,
             'maximum_tenor' => 52,
             'default_tenor' => 12,
@@ -70,7 +70,7 @@ final class LoanProductFactory extends Factory
             'name' => 'Monthly Repayment',
             'repayment_frequency' => RepaymentFrequency::Monthly,
             'tenor_unit' => TenorUnit::Months,
-            'interest_rate' => '40.0000',
+            'interest_rate' => '4.0000',
             'minimum_tenor' => 1,
             'maximum_tenor' => 24,
             'default_tenor' => 6,
@@ -80,6 +80,14 @@ final class LoanProductFactory extends Factory
     public function retired(): self
     {
         return $this->state(fn (): array => ['status' => 'retired']);
+    }
+
+    public function requiringGuarantors(int $minimum = 1): self
+    {
+        return $this->state(fn (): array => [
+            'requires_guarantor' => true,
+            'minimum_guarantors' => $minimum,
+        ]);
     }
 
     public function withProcessingFee(string $percentage): self

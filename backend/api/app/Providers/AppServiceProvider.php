@@ -21,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerDomainMigrations();
+        $this->registerDomainCommands();
         $this->registerFactoryResolution();
         $this->configureModels();
         $this->configurePasswordPolicy();
@@ -42,6 +43,35 @@ class AppServiceProvider extends ServiceProvider
 
         if ($paths !== []) {
             $this->loadMigrationsFrom($paths);
+        }
+    }
+
+    /**
+     * Each domain owns its console commands too, under `Domains/<Domain>/Console`,
+     * rather than the framework's flat `app/Console/Commands`.
+     *
+     * Registered explicitly: `Schedule::command()` in routes/console.php can
+     * reference a class directly without this, but a command is only
+     * resolvable by its signature — from `php artisan` or `$this->artisan()`
+     * in a test — once it is registered here.
+     */
+    private function registerDomainCommands(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $files = glob(app_path('Domains/*/Console/*.php')) ?: [];
+
+        $commands = array_map(
+            static fn (string $file): string => 'App\\Domains\\'
+                .basename(dirname($file, 2)).'\\Console\\'
+                .basename($file, '.php'),
+            $files,
+        );
+
+        if ($commands !== []) {
+            $this->commands($commands);
         }
     }
 

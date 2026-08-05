@@ -58,25 +58,25 @@ final class LoanCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function a_weekly_loan_costs_forty_percent(): void
+    public function a_weekly_loan_costs_four_percent(): void
     {
-        $terms = $this->terms('1000000.00', '40.0000', RepaymentFrequency::Weekly, tenor: 8);
+        $terms = $this->terms('1000000.00', '4.0000', RepaymentFrequency::Weekly, tenor: 8);
 
         $schedule = $this->calculator->schedule($terms);
 
-        // Borrow ₦1,000,000 weekly, repay ₦1,400,000.
-        $this->assertSame('400000.00', $schedule->totalInterest->toDecimalString());
-        $this->assertSame('1400000.00', $schedule->totalPayable()->toDecimalString());
+        // Borrow ₦1,000,000 weekly, repay ₦1,040,000.
+        $this->assertSame('40000.00', $schedule->totalInterest->toDecimalString());
+        $this->assertSame('1040000.00', $schedule->totalPayable()->toDecimalString());
     }
 
     #[Test]
-    public function a_monthly_loan_costs_forty_percent(): void
+    public function a_monthly_loan_costs_four_percent(): void
     {
-        $terms = $this->terms('1000000.00', '40.0000', RepaymentFrequency::Monthly, tenor: 6);
+        $terms = $this->terms('1000000.00', '4.0000', RepaymentFrequency::Monthly, tenor: 6);
 
         $schedule = $this->calculator->schedule($terms);
 
-        $this->assertSame('1400000.00', $schedule->totalPayable()->toDecimalString());
+        $this->assertSame('1040000.00', $schedule->totalPayable()->toDecimalString());
     }
 
     #[Test]
@@ -111,12 +111,12 @@ final class LoanCalculatorTest extends TestCase
         return [
             'daily on 50,000' => ['50000.00', '20.0000', '10000.00'],
             'daily on 1,000,000' => ['1000000.00', '20.0000', '200000.00'],
-            'weekly on 1,000,000' => ['1000000.00', '40.0000', '400000.00'],
-            'weekly on 250,000' => ['250000.00', '40.0000', '100000.00'],
+            'weekly on 1,000,000' => ['1000000.00', '4.0000', '40000.00'],
+            'weekly on 250,000' => ['250000.00', '4.0000', '10000.00'],
             'an odd principal' => ['33333.33', '20.0000', '6666.67'],
             'a principal of one kobo' => ['0.01', '20.0000', '0.00'],
             'half a kobo rounds up' => ['0.25', '20.0000', '0.05'],
-            'small principal' => ['1500.55', '40.0000', '600.22'],
+            'small principal' => ['1500.55', '4.0000', '60.02'],
         ];
     }
 
@@ -161,10 +161,10 @@ final class LoanCalculatorTest extends TestCase
             'daily, prime tenor' => ['77777.77', '20.0000', RepaymentFrequency::Daily, 23],
             'daily, single instalment' => ['5000.00', '20.0000', RepaymentFrequency::Daily, 1],
             'daily over 90 working days' => ['1000000.00', '20.0000', RepaymentFrequency::Daily, 90],
-            'weekly over 7 weeks' => ['333333.33', '40.0000', RepaymentFrequency::Weekly, 7],
-            'weekly over 52 weeks' => ['1000000.00', '40.0000', RepaymentFrequency::Weekly, 52],
-            'monthly over 3' => ['100000.01', '40.0000', RepaymentFrequency::Monthly, 3],
-            'monthly over 13' => ['999999.99', '40.0000', RepaymentFrequency::Monthly, 13],
+            'weekly over 7 weeks' => ['333333.33', '4.0000', RepaymentFrequency::Weekly, 7],
+            'weekly over 52 weeks' => ['1000000.00', '4.0000', RepaymentFrequency::Weekly, 52],
+            'monthly over 3' => ['100000.01', '4.0000', RepaymentFrequency::Monthly, 3],
+            'monthly over 13' => ['999999.99', '4.0000', RepaymentFrequency::Monthly, 13],
             'one kobo over 5 instalments' => ['0.05', '20.0000', RepaymentFrequency::Daily, 5],
         ];
     }
