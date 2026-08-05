@@ -10,6 +10,7 @@ import {
   Store,
   Package,
   FileText,
+  Landmark,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -49,6 +50,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Loan products', href: '/loan-products', icon: Package },
       { label: 'Loan applications', href: '/loan-applications', icon: FileText },
+      { label: 'Loans', href: '/loans', icon: Landmark },
     ],
   },
   {
