@@ -15,6 +15,8 @@ import {
   Banknote,
   BookOpen,
   ListChecks,
+  FileCheck2,
+  History,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -31,11 +33,9 @@ export interface NavSection {
 /**
  * Navigation for what actually exists today.
  *
- * Every domain still without a screen — loan applications, loans,
- * repayments, bank accounts, the ledger, reconciliation, receipts, the audit
- * log — is deliberately absent rather than linked as a placeholder: a dead
- * link in a financial console reads as broken, not as "coming soon". Add an
- * entry here the moment its route lands, not before.
+ * Every domain phase 0 through 16 now has a screen. Add an entry here the
+ * moment a new route lands, not before — a dead link in a financial console
+ * reads as broken, not as "coming soon".
  */
 export const navSections: NavSection[] = [
   {
@@ -56,6 +56,7 @@ export const navSections: NavSection[] = [
       { label: 'Loan applications', href: '/loan-applications', icon: FileText },
       { label: 'Loans', href: '/loans', icon: Landmark },
       { label: 'Repayments', href: '/repayments', icon: Receipt },
+      { label: 'Receipts', href: '/receipts', icon: FileCheck2 },
     ],
   },
   {
@@ -75,5 +76,9 @@ export const navSections: NavSection[] = [
       { label: 'Delinquency', href: '/reports/delinquency', icon: TrendingDown },
       { label: 'Compliance', href: '/reports/compliance', icon: ShieldCheck },
     ],
+  },
+  {
+    label: 'Compliance',
+    items: [{ label: 'Audit log', href: '/audit-log', icon: History }],
   },
 ];
