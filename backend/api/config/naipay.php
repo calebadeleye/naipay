@@ -174,6 +174,7 @@ return [
             'staff.role_change',
             'staff.approval_limit_change',
             'bank_account.change',
+            'reconciliation.approve',
         ],
 
         // When true, a staff member cannot approve an operation created by
