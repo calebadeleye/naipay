@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - config
+        - database
+        - routes
+
+    level: 5
+
+    excludePaths:
+        - database/migrations/*
+
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
