@@ -71,8 +71,13 @@ function GuarantorForm({ applicationId, onDone }: { applicationId: number; onDon
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    await addGuarantor.mutateAsync(form);
-    onDone();
+
+    try {
+      await addGuarantor.mutateAsync(form);
+      onDone();
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (
@@ -374,7 +379,9 @@ export default function LoanApplicationDetailPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeGuarantor.mutateAsync(guarantor.id)}
+                      onClick={() => {
+                        removeGuarantor.mutate(guarantor.id);
+                      }}
                     >
                       Remove
                     </Button>

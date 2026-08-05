@@ -46,13 +46,24 @@ export function useProtectedAction<TInput, TResult>(action: (input: TInput) => P
         return undefined;
       }
 
+      // Recorded for the caller to render via `actionError` rather than
+      // rethrown: every consumer fires `run()` from an onClick without
+      // awaiting it, so a rethrow here would surface as an unhandled promise
+      // rejection instead of the error message it is meant to become.
       setActionError(cause instanceof ApiError ? cause : null);
-      throw cause;
+
+      return undefined;
     }
   }
 
   async function confirmReauthentication(password: string, code?: string): Promise<TResult | undefined> {
-    await reauthenticate.mutateAsync({ password, code });
+    try {
+      await reauthenticate.mutateAsync({ password, code });
+    } catch {
+      // Surfaced via `reauthenticationError` below; the prompt stays open so
+      // the operator can correct the password or code and try again.
+      return undefined;
+    }
 
     const input = pending;
     setPending(null);

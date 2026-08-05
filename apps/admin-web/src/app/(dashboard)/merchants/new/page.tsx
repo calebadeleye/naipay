@@ -49,8 +49,12 @@ export default function NewMerchantPage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    const merchant = await createMerchant.mutateAsync(form);
-    router.replace(`/merchants/${merchant.id}`);
+    try {
+      const merchant = await createMerchant.mutateAsync(form);
+      router.replace(`/merchants/${merchant.id}`);
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (

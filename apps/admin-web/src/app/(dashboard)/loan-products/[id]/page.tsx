@@ -67,8 +67,12 @@ function SchedulePreviewPanel({ productId }: { productId: number | string }) {
   const error = preview.error instanceof ApiError ? preview.error : null;
 
   async function handlePreview() {
-    const data = await preview.mutateAsync({ amount, tenor: Number(tenor) });
-    setResult(data);
+    try {
+      const data = await preview.mutateAsync({ amount, tenor: Number(tenor) });
+      setResult(data);
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (
@@ -156,8 +160,13 @@ export default function LoanProductDetailPage() {
 
   async function handleSave() {
     if (!form) return;
-    await updateProduct.mutateAsync(form);
-    setEditing(false);
+
+    try {
+      await updateProduct.mutateAsync(form);
+      setEditing(false);
+    } catch {
+      // Surfaced via `updateError` above, rendered from the mutation state.
+    }
   }
 
   return (

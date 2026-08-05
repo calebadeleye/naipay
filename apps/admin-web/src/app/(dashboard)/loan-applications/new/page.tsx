@@ -98,16 +98,20 @@ export default function NewLoanApplicationPage() {
     event.preventDefault();
     if (!merchant || !businessId || !loanProductId) return;
 
-    const application = await createApplication.mutateAsync({
-      merchant_id: merchant.id,
-      business_id: Number(businessId),
-      loan_product_id: Number(loanProductId),
-      requested_amount: amount,
-      requested_tenor: Number(tenor),
-      purpose: purpose || undefined,
-    });
+    try {
+      const application = await createApplication.mutateAsync({
+        merchant_id: merchant.id,
+        business_id: Number(businessId),
+        loan_product_id: Number(loanProductId),
+        requested_amount: amount,
+        requested_tenor: Number(tenor),
+        purpose: purpose || undefined,
+      });
 
-    router.replace(`/loan-applications/${application.id}`);
+      router.replace(`/loan-applications/${application.id}`);
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (

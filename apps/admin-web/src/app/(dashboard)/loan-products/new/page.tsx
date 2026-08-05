@@ -44,8 +44,12 @@ export default function NewLoanProductPage() {
   const error = createProduct.error instanceof ApiError ? createProduct.error : null;
 
   async function handleSubmit() {
-    const product = await createProduct.mutateAsync(form);
-    router.replace(`/loan-products/${product.id}`);
+    try {
+      const product = await createProduct.mutateAsync(form);
+      router.replace(`/loan-products/${product.id}`);
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (

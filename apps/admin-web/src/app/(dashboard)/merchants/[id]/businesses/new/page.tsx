@@ -66,8 +66,12 @@ export default function NewBusinessPage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    const business = await createBusiness.mutateAsync(form);
-    router.replace(`/businesses/${business.id}`);
+    try {
+      const business = await createBusiness.mutateAsync(form);
+      router.replace(`/businesses/${business.id}`);
+    } catch {
+      // Surfaced via `error` above, rendered from the mutation state.
+    }
   }
 
   return (
