@@ -9,6 +9,7 @@ import {
   Users,
   Store,
   Package,
+  FileText,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -45,7 +46,10 @@ export const navSections: NavSection[] = [
   },
   {
     label: 'Lending',
-    items: [{ label: 'Loan products', href: '/loan-products', icon: Package }],
+    items: [
+      { label: 'Loan products', href: '/loan-products', icon: Package },
+      { label: 'Loan applications', href: '/loan-applications', icon: FileText },
+    ],
   },
   {
     label: 'Reports',

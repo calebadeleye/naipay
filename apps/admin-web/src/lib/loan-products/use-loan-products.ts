@@ -18,6 +18,28 @@ export function useLoanProducts(params?: ListQuery) {
   });
 }
 
+export interface LoanProductOption {
+  value: number;
+  label: string;
+  code: string;
+  summary: string;
+  frequency: string;
+  minimum_amount: string;
+  maximum_amount: string;
+  minimum_tenor: number;
+  maximum_tenor: number;
+  default_tenor: number | null;
+  tenor_unit: string;
+}
+
+export function useLoanProductOptions() {
+  return useQuery({
+    queryKey: ['loan-products', 'options'],
+    queryFn: ({ signal }) => api.get<LoanProductOption[]>('/admin/loan-products/options', { signal }),
+    staleTime: 60_000,
+  });
+}
+
 export function useLoanProduct(id: number | string) {
   return useQuery({
     queryKey: loanProductKeys.detail(id),
