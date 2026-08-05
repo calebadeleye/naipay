@@ -12,6 +12,7 @@ import {
   FileText,
   Landmark,
   Receipt,
+  Banknote,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -54,6 +55,10 @@ export const navSections: NavSection[] = [
       { label: 'Loans', href: '/loans', icon: Landmark },
       { label: 'Repayments', href: '/repayments', icon: Receipt },
     ],
+  },
+  {
+    label: 'Finance',
+    items: [{ label: 'Bank accounts', href: '/bank-accounts', icon: Banknote }],
   },
   {
     label: 'Reports',
