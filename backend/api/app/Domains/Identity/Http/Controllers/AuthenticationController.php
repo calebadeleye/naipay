@@ -6,6 +6,7 @@ namespace App\Domains\Identity\Http\Controllers;
 
 use App\Domains\Identity\Http\Requests\LoginRequest;
 use App\Domains\Identity\Http\Requests\ReauthenticateRequest;
+use App\Domains\Identity\Http\Requests\SendTwoFactorEmailCodeRequest;
 use App\Domains\Identity\Http\Requests\TwoFactorChallengeRequest;
 use App\Domains\Identity\Http\Resources\StaffResource;
 use App\Domains\Identity\Models\Staff;
@@ -65,6 +66,17 @@ final class AuthenticationController
         );
 
         return $this->respondWithSession($result->staff, (string) $result->token);
+    }
+
+    /**
+     * Mails a one-time code for a pending two-factor challenge, for an
+     * operator without their authenticator app to hand.
+     */
+    public function sendTwoFactorEmailCode(SendTwoFactorEmailCodeRequest $request): JsonResponse
+    {
+        $this->authentication->sendTwoFactorEmailCode($request->string('challenge_token')->toString());
+
+        return ApiResponse::success(message: 'A verification code has been sent to your email.');
     }
 
     /**

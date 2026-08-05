@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import {
   useEstablishSession,
   useLogin,
+  useSendTwoFactorEmailCode,
   useTwoFactorChallenge,
 } from '@/lib/auth/use-auth';
 import { isTwoFactorChallenge, type SessionPayload } from '@/lib/auth/types';
@@ -20,11 +21,13 @@ export function SignInForm() {
 
   const login = useLogin();
   const challenge = useTwoFactorChallenge();
+  const sendEmailCode = useSendTwoFactorEmailCode();
   const establishSession = useEstablishSession();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
 
   // Holding the challenge token in component state rather than storage keeps
   // it out of anything that outlives the tab, and it is single-use anyway.
@@ -75,8 +78,23 @@ export function SignInForm() {
   function restart() {
     setChallengeToken(null);
     setCode('');
+    setEmailCodeSent(false);
     challenge.reset();
     login.reset();
+    sendEmailCode.reset();
+  }
+
+  async function handleSendEmailCode() {
+    if (challengeToken === null) {
+      return;
+    }
+
+    try {
+      await sendEmailCode.mutateAsync({ challenge_token: challengeToken });
+      setEmailCodeSent(true);
+    } catch {
+      // Surfaced via `sendEmailCode.error` below, rendered from the mutation state.
+    }
   }
 
   if (challengeToken !== null) {
@@ -101,6 +119,35 @@ export function SignInForm() {
           error={error?.fieldError('code')}
           className="numeric tracking-widest"
         />
+
+        {sendEmailCode.error instanceof ApiError ? (
+          <Alert tone="error" reference={sendEmailCode.error.correlationId}>
+            {sendEmailCode.error.message}
+          </Alert>
+        ) : null}
+
+        {emailCodeSent ? (
+          <p className="text-sm text-slate-600">
+            A code was emailed to you. Check your inbox (and spam), then enter it above.{' '}
+            <button
+              type="button"
+              onClick={handleSendEmailCode}
+              disabled={sendEmailCode.isPending}
+              className="font-medium text-brand-700 hover:text-brand-800 disabled:opacity-60"
+            >
+              Send another
+            </button>
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSendEmailCode}
+            disabled={sendEmailCode.isPending}
+            className="w-full text-center text-sm text-brand-700 hover:text-brand-800 disabled:opacity-60"
+          >
+            {sendEmailCode.isPending ? 'Sending…' : "Don't have your authenticator app? Email me a code"}
+          </button>
+        )}
 
         <Button type="submit" fullWidth loading={pending}>
           Verify and sign in

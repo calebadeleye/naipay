@@ -69,6 +69,14 @@ export function useTwoFactorChallenge() {
   });
 }
 
+/** Mails a one-time code for a pending challenge, for an operator without an authenticator app to hand. */
+export function useSendTwoFactorEmailCode() {
+  return useMutation({
+    mutationFn: (input: { challenge_token: string }) =>
+      api.post<Record<string, never>>('/admin/auth/two-factor/email-code', input),
+  });
+}
+
 export function useForgotPassword() {
   return useMutation({
     mutationFn: (input: { email: string }) =>

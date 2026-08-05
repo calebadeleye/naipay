@@ -115,6 +115,48 @@ final class AuthenticationService
         string $code,
         RequestContext $context,
     ): AuthenticationResult {
+        $staff = $this->resolveChallenge($challengeToken);
+
+        if (! $this->twoFactor->verifyChallenge($staff, $code)) {
+            // A wrong second factor counts towards lockout too — otherwise an
+            // attacker holding the password gets unlimited attempts at the code.
+            $this->registerFailure($staff);
+            $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_TWO_FACTOR, $context);
+
+            throw AuthenticationFailedException::invalidTwoFactorCode();
+        }
+
+        // Single-use: consumed the moment it succeeds.
+        Cache::forget(self::CHALLENGE_CACHE_PREFIX.hash('sha256', $challengeToken));
+
+        $this->clearFailures($staff);
+
+        return AuthenticationResult::authenticated(
+            $staff,
+            $this->issueToken($staff, $context),
+        );
+    }
+
+    /**
+     * Emails a one-time code as an alternative to an authenticator app, for a
+     * pending two-factor challenge.
+     *
+     * @throws AuthenticationFailedException
+     */
+    public function sendTwoFactorEmailCode(string $challengeToken): void
+    {
+        $staff = $this->resolveChallenge($challengeToken);
+
+        $this->twoFactor->sendEmailCode($staff);
+    }
+
+    /**
+     * Looks up the staff a pending two-factor challenge belongs to.
+     *
+     * @throws AuthenticationFailedException
+     */
+    private function resolveChallenge(string $challengeToken): Staff
+    {
         $cacheKey = self::CHALLENGE_CACHE_PREFIX.hash('sha256', $challengeToken);
 
         /** @var array{staff_id: int}|null $payload */
@@ -132,24 +174,7 @@ final class AuthenticationService
             throw AuthenticationFailedException::challengeExpired();
         }
 
-        if (! $this->twoFactor->verifyChallenge($staff, $code)) {
-            // A wrong second factor counts towards lockout too — otherwise an
-            // attacker holding the password gets unlimited attempts at the code.
-            $this->registerFailure($staff);
-            $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_TWO_FACTOR, $context);
-
-            throw AuthenticationFailedException::invalidTwoFactorCode();
-        }
-
-        // Single-use: consumed the moment it succeeds.
-        Cache::forget($cacheKey);
-
-        $this->clearFailures($staff);
-
-        return AuthenticationResult::authenticated(
-            $staff,
-            $this->issueToken($staff, $context),
-        );
+        return $staff;
     }
 
     /**

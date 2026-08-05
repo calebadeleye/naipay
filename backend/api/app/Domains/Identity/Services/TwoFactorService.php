@@ -5,21 +5,28 @@ declare(strict_types=1);
 namespace App\Domains\Identity\Services;
 
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Identity\Notifications\TwoFactorEmailCodeNotification;
 use App\Support\Exceptions\DomainException;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 use Throwable;
 
 /**
- * Time-based one-time password (TOTP) enrolment and verification.
+ * Time-based one-time password (TOTP) enrolment and verification, with a
+ * mailed code as a fallback second factor.
  *
- * Works with any authenticator app. Naipay stores only the shared secret,
- * encrypted at rest, and never transmits or logs a code.
+ * TOTP works with any authenticator app; Naipay stores only the shared
+ * secret, encrypted at rest, and never transmits or logs a code. The mailed
+ * code exists for an operator without a device to hand, and is deliberately
+ * weaker: it depends on the mail account staying secure rather than a
+ * possessed device, so it is offered only where a challenge is already open,
+ * never as a way to enrol two-factor in the first place.
  */
 final class TwoFactorService
 {
@@ -33,6 +40,14 @@ final class TwoFactorService
     private const WINDOW = 1;
 
     private const RECOVERY_CODE_COUNT = 8;
+
+    private const EMAIL_CODE_CACHE_PREFIX = 'naipay:2fa-email-code:';
+
+    private const EMAIL_CODE_COOLDOWN_PREFIX = 'naipay:2fa-email-code-cooldown:';
+
+    private const EMAIL_CODE_TTL_MINUTES = 10;
+
+    private const EMAIL_CODE_COOLDOWN_SECONDS = 30;
 
     public function __construct(
         private readonly Google2FA $google2fa,
@@ -115,10 +130,11 @@ final class TwoFactorService
     }
 
     /**
-     * Verifies a challenge during sign-in, accepting either a TOTP code or an
-     * unused recovery code.
+     * Verifies a challenge during sign-in, accepting a TOTP code, a mailed
+     * code, or an unused recovery code.
      *
-     * A recovery code is consumed on use.
+     * A recovery code is consumed on use; so is a mailed code, the moment
+     * either succeeds.
      */
     public function verifyChallenge(Staff $staff, string $code): bool
     {
@@ -128,13 +144,48 @@ final class TwoFactorService
 
         $code = trim($code);
 
-        // A six-digit value is a TOTP code; anything else is treated as a
-        // recovery code, which avoids burning one on a mistyped TOTP.
+        // A six-digit value is a TOTP or mailed code; anything else is
+        // treated as a recovery code, which avoids burning one on a
+        // mistyped six-digit code.
         if (preg_match('/^\d{6}$/', $code) === 1) {
-            return $this->verifyCode((string) $staff->two_factor_secret, $code);
+            return $this->verifyCode((string) $staff->two_factor_secret, $code)
+                || $this->verifyEmailCode($staff, $code);
         }
 
         return $this->consumeRecoveryCode($staff, $code);
+    }
+
+    /**
+     * Mails a fresh one-time code, for an operator without their
+     * authenticator app to hand.
+     *
+     * Throttled per account: a challenge screen offering a resend is the one
+     * place an unauthenticated caller can make Naipay send mail on demand.
+     */
+    public function sendEmailCode(Staff $staff): void
+    {
+        if (! $staff->hasTwoFactorEnabled()) {
+            return;
+        }
+
+        $cooldownKey = self::EMAIL_CODE_COOLDOWN_PREFIX.$staff->getKey();
+
+        if (Cache::has($cooldownKey)) {
+            throw new DomainException(
+                'A code was already sent recently. Check your inbox, including spam, before requesting another.',
+            );
+        }
+
+        $code = (string) random_int(100000, 999999);
+
+        Cache::put(
+            self::EMAIL_CODE_CACHE_PREFIX.$staff->getKey(),
+            Hash::make($code),
+            now()->addMinutes(self::EMAIL_CODE_TTL_MINUTES),
+        );
+        Cache::put($cooldownKey, true, self::EMAIL_CODE_COOLDOWN_SECONDS);
+
+        $staff->notify(new TwoFactorEmailCodeNotification($code, self::EMAIL_CODE_TTL_MINUTES));
     }
 
     /**
@@ -185,6 +236,26 @@ final class TwoFactorService
     public function remainingRecoveryCodes(Staff $staff): int
     {
         return count($staff->two_factor_recovery_codes ?? []);
+    }
+
+    /**
+     * Checks a code against the one most recently mailed, if any.
+     *
+     * Single-use: forgotten from cache the moment it matches, the same
+     * discipline as a recovery code.
+     */
+    private function verifyEmailCode(Staff $staff, string $code): bool
+    {
+        $cacheKey = self::EMAIL_CODE_CACHE_PREFIX.$staff->getKey();
+        $hash = Cache::get($cacheKey);
+
+        if ($hash === null || ! Hash::check($code, $hash)) {
+            return false;
+        }
+
+        Cache::forget($cacheKey);
+
+        return true;
     }
 
     private function verifyCode(string $secret, string $code): bool

@@ -29,6 +29,11 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::post('two-factor/challenge', [AuthenticationController::class, 'twoFactorChallenge'])
             ->name('two-factor.challenge');
 
+        // Mails a one-time code as an alternative to an authenticator app,
+        // for a challenge already open. Never a way to enrol two-factor.
+        Route::post('two-factor/email-code', [AuthenticationController::class, 'sendTwoFactorEmailCode'])
+            ->name('two-factor.email-code');
+
         Route::post('forgot-password', [PasswordController::class, 'forgot'])->name('password.forgot');
         Route::post('reset-password', [PasswordController::class, 'reset'])->name('password.reset');
     });
