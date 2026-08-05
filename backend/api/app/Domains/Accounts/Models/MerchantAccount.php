@@ -8,6 +8,8 @@ use App\Domains\Accounts\Enums\AccountStatus;
 use App\Domains\Merchants\Models\Merchant;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
+use Database\Factories\MerchantAccountFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MerchantAccount extends Model
 {
+    /** @use HasFactory<MerchantAccountFactory> */
+    use HasFactory;
+
     protected $table = 'merchant_accounts';
 
     /**

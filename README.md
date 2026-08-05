@@ -226,7 +226,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 6 | Loan products | ✅ API complete |
 | 7 | Loan applications | ✅ API complete |
 | 8 | Loans and disbursement | ✅ API complete |
-| 9 | Manual repayments | Pending |
+| 9 | Manual repayments | ✅ API complete |
 | 10 | Designated bank accounts | ✅ API complete |
 | 11 | Double-entry ledger | ✅ API complete |
 | 12 | Manual bank reconciliation | Pending |
