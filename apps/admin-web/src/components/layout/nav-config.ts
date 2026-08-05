@@ -17,6 +17,8 @@ import {
   ListChecks,
   FileCheck2,
   History,
+  Building2,
+  UserCog,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -80,5 +82,12 @@ export const navSections: NavSection[] = [
   {
     label: 'Compliance',
     items: [{ label: 'Audit log', href: '/audit-log', icon: History }],
+  },
+  {
+    label: 'Organisation',
+    items: [
+      { label: 'Branches', href: '/branches', icon: Building2 },
+      { label: 'Staff', href: '/staff', icon: UserCog },
+    ],
   },
 ];
