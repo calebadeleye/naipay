@@ -96,6 +96,18 @@ final class MakerCheckerGuard
     }
 
     /**
+     * Whether `$operation` accepts a password-only reauthentication. See
+     * naipay.security.reauthentication_two_factor_optional_operations.
+     */
+    private function twoFactorOptionalFor(string $operation): bool
+    {
+        /** @var array<int, string> $operations */
+        $operations = config('naipay.security.reauthentication_two_factor_optional_operations', []);
+
+        return in_array($operation, $operations, true);
+    }
+
+    /**
      * Refuses an operation named in naipay.security.
      * reauthentication_required_operations unless the actor's current token
      * proved their password (and 2FA code, if enabled) again within
@@ -127,7 +139,19 @@ final class MakerCheckerGuard
 
         $windowMinutes = (int) config('naipay.security.reauthentication_window_minutes', 15);
 
-        if ($token->reauthenticated_at instanceof CarbonInterface && $token->reauthenticated_at->addMinutes($windowMinutes)->isFuture()) {
+        $recentlyReauthenticated = $token->reauthenticated_at instanceof CarbonInterface
+            && $token->reauthenticated_at->addMinutes($windowMinutes)->isFuture();
+
+        // A password-only reauthentication (accepted for the operations in
+        // reauthentication_two_factor_optional_operations) must not also
+        // satisfy a stricter, financial operation for the rest of the
+        // window — otherwise granting a role would leave two-factor
+        // effectively optional for a disbursement moments later.
+        $twoFactorSatisfied = ! $actor->hasTwoFactorEnabled()
+            || $this->twoFactorOptionalFor($operation)
+            || $token->reauthenticated_with_two_factor;
+
+        if ($recentlyReauthenticated && $twoFactorSatisfied) {
             return;
         }
 

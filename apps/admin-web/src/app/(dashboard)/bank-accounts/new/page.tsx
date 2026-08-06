@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useCreateBankAccount } from '@/lib/bank-accounts/use-bank-accounts';
 import type { BankAccountFormInput } from '@/lib/bank-accounts/types';
 
@@ -32,6 +33,14 @@ const emptyForm: BankAccountFormInput = {
 };
 
 export default function NewBankAccountPage() {
+  return (
+    <RequirePermission permission="bank_accounts.manage">
+      <NewBankAccountForm />
+    </RequirePermission>
+  );
+}
+
+function NewBankAccountForm() {
   const router = useRouter();
   const [form, setForm] = useState<BankAccountFormInput>(emptyForm);
   const createAccount = useCreateBankAccount();

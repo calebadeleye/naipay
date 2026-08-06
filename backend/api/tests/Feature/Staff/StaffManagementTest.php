@@ -64,6 +64,26 @@ final class StaffManagementTest extends TestCase
     }
 
     #[Test]
+    public function the_super_administrator_role_cannot_be_granted_at_creation(): void
+    {
+        $this->actingAsRole(Role::SuperAdministrator);
+        $branch = Branch::factory()->create();
+
+        // There is exactly one Super Administrator, seeded once at install
+        // time — not even an existing one may mint another through staff
+        // creation.
+        $this->postJson('/api/v1/admin/staff', [
+            'first_name' => 'Would',
+            'last_name' => 'BeAdmin',
+            'email' => 'would.beadmin@naitalk.com',
+            'branch_id' => $branch->id,
+            'roles' => [Role::SuperAdministrator->value],
+        ])->assertStatus(422);
+
+        $this->assertDatabaseMissing('staff', ['email' => 'would.beadmin@naitalk.com']);
+    }
+
+    #[Test]
     public function a_staff_member_cannot_be_assigned_to_a_closed_branch(): void
     {
         $this->actingAsRole(Role::SuperAdministrator);
@@ -189,6 +209,21 @@ final class StaffManagementTest extends TestCase
         // Existing tokens carry the old permission set as abilities, so they
         // must not survive a role change.
         $this->assertSame(0, $subject->tokens()->count());
+    }
+
+    #[Test]
+    public function an_existing_super_administrator_cannot_grant_the_role_to_someone_else(): void
+    {
+        $this->actingAsRole(Role::SuperAdministrator);
+
+        $subject = Staff::factory()->create();
+        $subject->assignRole(Role::Cashier->value);
+
+        $this->putJson("/api/v1/admin/staff/{$subject->id}/roles", [
+            'roles' => [Role::SuperAdministrator->value],
+        ])->assertStatus(422);
+
+        $this->assertSame([Role::Cashier->value], $subject->fresh()->roleNames()->all());
     }
 
     #[Test]

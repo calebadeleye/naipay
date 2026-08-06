@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -19,16 +20,17 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
+    <main className="glass-backdrop-dark flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tracking-tight text-brand-700">Naipay</span>
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <Image src="/every_logo_mark.png" alt="" width={36} height={36} priority />
+            <span className="text-2xl font-semibold tracking-tight text-white">Every Merchant</span>
           </Link>
-          <p className="mt-1 text-sm text-slate-500">Merchant Microfinance</p>
+          <p className="mt-1 text-sm text-brand-200">Merchant Microfinance</p>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="glass-surface rounded-2xl p-6">
           <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
           {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
 
@@ -37,7 +39,7 @@ export function AuthShell({
 
         {footer ? <div className="mt-6 text-center text-sm">{footer}</div> : null}
 
-        <p className="mt-8 text-center text-xs text-slate-400">
+        <p className="mt-8 text-center text-xs text-brand-300">
           Authorised staff only. All activity is recorded.
         </p>
       </div>

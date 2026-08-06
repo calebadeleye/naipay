@@ -14,7 +14,7 @@ const schema = z.object({
   NEXT_PUBLIC_API_URL: z
     .string()
     .url('NEXT_PUBLIC_API_URL must be a full URL, including the /api/v1 prefix.'),
-  NEXT_PUBLIC_APP_NAME: z.string().default('Naipay'),
+  NEXT_PUBLIC_APP_NAME: z.string().default('Every Merchant'),
   NEXT_PUBLIC_ENVIRONMENT: z
     .enum(['local', 'staging', 'production'])
     .default('local'),
@@ -34,7 +34,7 @@ if (!parsed.success) {
     .join('\n');
 
   throw new Error(
-    `Naipay admin console environment is not configured correctly:\n${issues}\n\n` +
+    `Every Merchant admin console environment is not configured correctly:\n${issues}\n\n` +
       'Copy .env.example to .env.local and fill in the values.',
   );
 }

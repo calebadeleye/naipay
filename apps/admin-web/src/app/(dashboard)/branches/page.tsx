@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { useBranches } from '@/lib/branches/use-branches';
 import type { BranchStatusKey } from '@/lib/branches/types';
 
@@ -31,6 +32,7 @@ export default function BranchesPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('branches.manage');
 
   const { data, isLoading, error } = useBranches({
     search: search || undefined,
@@ -43,11 +45,13 @@ export default function BranchesPage() {
     <>
       <PageHeader
         title="Branches"
-        description="Naipay's physical locations. Staff and merchants are each attached to one."
+        description="Every Merchant's physical locations. Staff and merchants are each attached to one."
         actions={
-          <Link href="/branches/new" className={buttonVariants({ variant: 'primary' })}>
-            New branch
-          </Link>
+          canCreate ? (
+            <Link href="/branches/new" className={buttonVariants({ variant: 'primary' })}>
+              New branch
+            </Link>
+          ) : undefined
         }
       />
 

@@ -4,6 +4,7 @@ import type { ListQuery } from '@naipay/shared-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { ROLE_OPTIONS, type RoleOption } from '@/lib/staff/types';
 import type { StaffFormInput, StaffMember } from '@/lib/staff/types';
 
 export const staffKeys = {
@@ -90,6 +91,17 @@ export function useDisableStaff(id: number | string) {
     mutationFn: (input: { reason: string }) => api.post<StaffMember>(`/admin/staff/${id}/disable`, input),
     onSuccess: () => invalidateStaff(queryClient, id),
   });
+}
+
+/**
+ * The roles an admin viewing this console may grant to someone else.
+ *
+ * Super Administrator is never among them, for anyone — see the note on
+ * ROLE_OPTIONS. The API refuses the grant regardless of what the console
+ * renders; see StaffManagementService::ensureSingleSuperAdministrator().
+ */
+export function useAssignableRoleOptions(): RoleOption[] {
+  return ROLE_OPTIONS;
 }
 
 export function useAssignStaffRoles(id: number | string) {

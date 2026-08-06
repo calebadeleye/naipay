@@ -18,6 +18,7 @@ import { formatDateTime, formatMoney } from '@/lib/format';
 import { useProtectedAction } from '@/lib/auth/use-reauthenticate';
 import { useBranchOptions } from '@/lib/branches/use-branches';
 import {
+  useAssignableRoleOptions,
   useAssignStaffRoles,
   useDisableStaff,
   useReinstateStaff,
@@ -28,7 +29,6 @@ import {
   useTransferStaff,
   useUpdateStaff,
 } from '@/lib/staff/use-staff';
-import { ROLE_OPTIONS } from '@/lib/staff/types';
 import type { StaffFormInput, StaffMember, StaffStatusKey } from '@/lib/staff/types';
 
 const statusTone: Record<StaffStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -140,8 +140,9 @@ function ResetPasswordAction({ staffId }: { staffId: number }) {
 
 function RolesEditor({ staff }: { staff: StaffMember }) {
   const [roles, setRoles] = useState<string[]>(staff.roles);
+  const roleOptions = useAssignableRoleOptions();
   const assignRoles = useAssignStaffRoles(staff.id);
-  const protectedAssign = useProtectedAction((input: string[]) => assignRoles.mutateAsync(input));
+  const protectedAssign = useProtectedAction((input: string[]) => assignRoles.mutateAsync(input), 'staff.role_change');
   const error = protectedAssign.actionError;
 
   function toggle(role: string) {
@@ -157,6 +158,7 @@ function RolesEditor({ staff }: { staff: StaffMember }) {
         <ReauthPrompt
           pending={protectedAssign.reauthenticating}
           error={protectedAssign.reauthenticationError}
+          twoFactorOptional
           onCancel={protectedAssign.cancelReauthentication}
           onConfirm={(password, code) => protectedAssign.confirmReauthentication(password, code)}
         />
@@ -173,7 +175,7 @@ function RolesEditor({ staff }: { staff: StaffMember }) {
         </Alert>
       ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {ROLE_OPTIONS.map((role) => (
+        {roleOptions.map((role) => (
           <label key={role.value} className="flex items-start gap-2 text-sm text-slate-800">
             <input
               type="checkbox"

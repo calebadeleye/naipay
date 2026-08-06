@@ -72,9 +72,14 @@ export interface RoleOption {
   description: string;
 }
 
-/** The 15 seeded roles — App\Domains\Identity\Enums\Role. */
+/**
+ * The 14 roles assignable through staff management — App\Domains\Identity\Enums\Role,
+ * minus Super Administrator. There can only ever be one Super Administrator, seeded
+ * once at install time, and neither the console nor the API allows granting it to
+ * anyone else — so it's never offered here. See
+ * StaffManagementService::ensureSingleSuperAdministrator() on the backend.
+ */
 export const ROLE_OPTIONS: RoleOption[] = [
-  { value: 'super-administrator', label: 'Super Administrator', description: 'Unrestricted access, including system settings and access control.' },
   { value: 'executive', label: 'Executive', description: 'Portfolio-wide visibility and reporting, without operational write access.' },
   { value: 'operations-manager', label: 'Operations Manager', description: 'Oversees merchant onboarding, loan operations and branch activity.' },
   { value: 'branch-manager', label: 'Branch Manager', description: 'Manages a branch: its staff, merchants, loans and collections.' },

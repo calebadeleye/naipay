@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useMerchants } from '@/lib/merchants/use-merchants';
 import { useBusinesses } from '@/lib/businesses/use-businesses';
 import { useLoanProductOptions } from '@/lib/loan-products/use-loan-products';
@@ -79,6 +80,14 @@ function MerchantPicker({
 }
 
 export default function NewLoanApplicationPage() {
+  return (
+    <RequirePermission permission="loan_applications.create">
+      <NewLoanApplicationForm />
+    </RequirePermission>
+  );
+}
+
+function NewLoanApplicationForm() {
   const router = useRouter();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [businessId, setBusinessId] = useState('');

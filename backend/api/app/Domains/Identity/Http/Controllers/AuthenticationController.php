@@ -110,6 +110,7 @@ final class AuthenticationController
             $request->string('password')->toString(),
             $request->filled('code') ? $request->string('code')->toString() : null,
             RequestContext::fromRequest($request),
+            $request->filled('operation') ? $request->string('operation')->toString() : null,
         );
 
         return ApiResponse::success(message: 'Reauthentication successful.');

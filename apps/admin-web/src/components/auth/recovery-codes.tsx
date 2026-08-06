@@ -67,7 +67,7 @@ export function RecoveryCodes({
       </label>
 
       <Button type="button" fullWidth disabled={!acknowledged} onClick={onContinue}>
-        Continue to Naipay
+        Continue to Every Merchant
       </Button>
     </div>
   );

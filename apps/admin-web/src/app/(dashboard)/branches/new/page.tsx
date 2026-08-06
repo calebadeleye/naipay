@@ -8,6 +8,7 @@ import { Alert, Field } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useCreateBranch } from '@/lib/branches/use-branches';
 import type { BranchFormInput } from '@/lib/branches/types';
 
@@ -22,6 +23,14 @@ const emptyForm: BranchFormInput = {
 };
 
 export default function NewBranchPage() {
+  return (
+    <RequirePermission permission="branches.manage">
+      <NewBranchForm />
+    </RequirePermission>
+  );
+}
+
+function NewBranchForm() {
   const router = useRouter();
   const [form, setForm] = useState<BranchFormInput>(emptyForm);
   const createBranch = useCreateBranch();

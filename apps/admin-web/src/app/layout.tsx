@@ -20,10 +20,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Naipay Administration',
-    template: '%s · Naipay',
+    default: 'Every Merchant Administration',
+    template: '%s · Every Merchant',
   },
-  description: 'Naipay merchant microfinance administration platform.',
+  description: 'Every Merchant microfinance administration platform.',
   // An internal financial console must never be indexed, and referrers must
   // not leak record identifiers to third parties.
   robots: {

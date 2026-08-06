@@ -6,6 +6,8 @@ namespace App\Domains\Staff\Http\Requests;
 
 use App\Domains\Identity\Enums\AccessScope;
 use App\Domains\Identity\Enums\Permission;
+use App\Domains\Identity\Models\Staff;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +36,26 @@ final class UpdateStaffRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:120'],
             'department' => ['nullable', 'string', 'max:60'],
 
-            'access_scope' => ['sometimes', Rule::enum(AccessScope::class)],
+            // branch_id isn't accepted here — it has its own transfer
+            // endpoint — so the only thing to guard is switching an existing
+            // branch-less account TO Branch scope, which would leave it in
+            // the same unable-to-see-its-own-records state StoreStaffRequest
+            // guards against at creation.
+            'access_scope' => [
+                'sometimes',
+                Rule::enum(AccessScope::class),
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($value !== AccessScope::Branch->value) {
+                        return;
+                    }
+
+                    $staff = $this->route('staff');
+
+                    if ($staff instanceof Staff && $staff->branch_id === null) {
+                        $fail('This staff member has no branch. Transfer them to a branch first.');
+                    }
+                },
+            ],
 
             // Roles, approval limits, branch transfers and status changes each
             // have their own endpoint: they are separately permissioned,

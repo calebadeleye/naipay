@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
         // address matched an account, and so does this screen — anything else
         // would make it an account-enumeration oracle.
         <Alert tone="success">
-          If that email address matches a Naipay account, a reset link has been sent to it. The
+          If that email address matches an Every Merchant account, a reset link has been sent to it. The
           link expires in one hour.
         </Alert>
       ) : (

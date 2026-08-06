@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useBankAccountOptions } from '@/lib/bank-accounts/use-bank-accounts';
 import { useLoans } from '@/lib/loans/use-loans';
 import { useCreateRepayment } from '@/lib/repayments/use-repayments';
@@ -79,6 +80,14 @@ function LoanPicker({ selected, onSelect }: { selected: Loan | null; onSelect: (
 }
 
 export default function NewRepaymentPage() {
+  return (
+    <RequirePermission permission="repayments.record">
+      <NewRepaymentForm />
+    </RequirePermission>
+  );
+}
+
+function NewRepaymentForm() {
   const router = useRouter();
   const [loan, setLoan] = useState<Loan | null>(null);
   const [bankAccountId, setBankAccountId] = useState('');

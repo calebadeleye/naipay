@@ -23,6 +23,18 @@
   --color-brand-900: var(--naipay-brand-900);
   --color-brand-950: var(--naipay-brand-950);
 
+  --color-accent-50: var(--naipay-accent-50);
+  --color-accent-100: var(--naipay-accent-100);
+  --color-accent-200: var(--naipay-accent-200);
+  --color-accent-300: var(--naipay-accent-300);
+  --color-accent-400: var(--naipay-accent-400);
+  --color-accent-500: var(--naipay-accent-500);
+  --color-accent-600: var(--naipay-accent-600);
+  --color-accent-700: var(--naipay-accent-700);
+  --color-accent-800: var(--naipay-accent-800);
+  --color-accent-900: var(--naipay-accent-900);
+  --color-accent-950: var(--naipay-accent-950);
+
   --color-success: var(--naipay-success);
   --color-success-surface: var(--naipay-success-surface);
   --color-warning: var(--naipay-warning);
@@ -40,9 +52,78 @@
   --font-mono: var(--font-jetbrains-mono), var(--naipay-font-mono);
 }
 
+/*
+ * Glassmorphism backdrop for the authenticated console.
+ *
+ * `bg.jpg` gives the frosted panels something with real shape and colour
+ * variation to blur — a flat gradient blurs into more flat gradient, which
+ * reads as tinted-and-transparent rather than glass. Fixed to the viewport,
+ * not the page, so it doesn't shift under a tall scrolling table.
+ *
+ * The sign-in pages deliberately do NOT use this: AuthShell and
+ * InvestorAuthShell paint their own `.glass-backdrop-dark` on a `<main>`
+ * that covers the full viewport, which sits on top of this and hides it —
+ * nothing extra required here to keep the two looks separate.
+ */
 body {
-  background: var(--naipay-background);
+  background:
+    url('/bg.jpg') center / cover fixed no-repeat,
+    var(--naipay-background);
   color: var(--naipay-text);
+}
+
+/*
+ * A frosted surface: the shared look behind every card, sidebar and topbar
+ * once the console has a backdrop worth seeing through.
+ *
+ * The `-webkit-` prefix is deliberately NOT written by hand here: Lightning
+ * CSS (Tailwind v4's build pipeline) autoprefixes `backdrop-filter` for the
+ * project's browser targets on its own, and writing both versions in the
+ * source confuses its dedup pass into emitting only the prefixed one and
+ * silently dropping the standard property — which is a blur that never
+ * renders in any browser that honours the unprefixed name, i.e. all of them
+ * except Safari. One declaration, and the build tool does the rest.
+ */
+.glass-surface {
+  background: color-mix(in srgb, var(--naipay-surface) 68%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in srgb, white 55%, transparent);
+  box-shadow: 0 8px 32px -4px color-mix(in srgb, var(--naipay-brand-900) 12%, transparent);
+}
+
+/*
+ * A gentle wash for the content area as a whole — `<main>` in AppShell and
+ * InvestorAppShell. `bg.jpg`'s shapes and colour blocks give the Cards
+ * something worth blurring, but they also sit directly behind anything that
+ * ISN'T inside a `.glass-surface` panel: a filter row's field labels, a
+ * loading spinner's caption, any text a page renders straight onto `<main>`.
+ * Those go illegible wherever the image happens to be busy or light at that
+ * exact spot, which is exactly the "black text not visible" report this is
+ * fixing. Lighter and less blurred than `.glass-surface` on purpose — this
+ * is a baseline, not a panel, and every Card and PageHeader on top of it
+ * still reads as the more distinct glass surface it already was.
+ */
+.glass-scrim {
+  background: color-mix(in srgb, var(--naipay-surface) 40%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+/* The dark-green counterpart, for the sidebar and the auth-page card frame. */
+.glass-surface-dark {
+  background: color-mix(in srgb, var(--naipay-brand-900) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+}
+
+/*
+ * The sign-in pages' own backdrop: darker than the console body, since a
+ * white glass card needs to stand out against it rather than blend in.
+ */
+.glass-backdrop-dark {
+  background:
+    radial-gradient(900px 700px at 12% 8%, color-mix(in srgb, var(--naipay-brand-600) 45%, transparent), transparent 60%),
+    radial-gradient(800px 650px at 92% 88%, color-mix(in srgb, var(--naipay-brand-500) 35%, transparent), transparent 55%),
+    var(--naipay-brand-950);
 }
 
 /*

@@ -33,7 +33,19 @@ final class StoreStaffRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:120'],
             'department' => ['nullable', 'string', 'max:60'],
 
-            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->whereNull('deleted_at')],
+            // Required whenever the account will end up Branch-scoped —
+            // including when access_scope is omitted, since that's the
+            // default a missing value resolves to (see Staff::accessScope()).
+            // A Branch-scoped account with no branch can access nothing it
+            // creates: MerchantOnboardingService::create() defaults a new
+            // record's branch to its creator's, so branch_id stays null on
+            // both, and the creator gets a 404 opening what they just made.
+            'branch_id' => [
+                Rule::requiredIf(fn (): bool => $this->input('access_scope', AccessScope::Branch->value) === AccessScope::Branch->value),
+                'nullable',
+                'integer',
+                Rule::exists('branches', 'id')->whereNull('deleted_at'),
+            ],
             'access_scope' => ['sometimes', Rule::enum(AccessScope::class)],
 
             // Assigning a role at creation is convenient and safe: the creator

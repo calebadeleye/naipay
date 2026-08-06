@@ -11,7 +11,7 @@ export default function SignInPage() {
   return (
     <AuthShell
       title="Sign in"
-      description="Use your Naipay staff credentials."
+      description="Use your Every Merchant staff credentials."
     >
       {/* useSearchParams needs a suspense boundary during prerender. */}
       <Suspense fallback={null}>

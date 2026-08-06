@@ -12,6 +12,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
 import { useBankAccounts } from '@/lib/bank-accounts/use-bank-accounts';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import type { BankAccountStatusKey } from '@/lib/bank-accounts/types';
 
 const statusTone: Record<BankAccountStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -31,6 +32,7 @@ export default function BankAccountsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('bank_accounts.manage');
 
   const { data, isLoading, error } = useBankAccounts({
     search: search || undefined,
@@ -43,11 +45,13 @@ export default function BankAccountsPage() {
     <>
       <PageHeader
         title="Bank accounts"
-        description="Naipay's own designated accounts — where repayments are collected and loans are disbursed from."
+        description="Every Merchant's own designated accounts — where repayments are collected and loans are disbursed from."
         actions={
-          <Link href="/bank-accounts/new" className={buttonVariants({ variant: 'primary' })}>
-            Add account
-          </Link>
+          canCreate ? (
+            <Link href="/bank-accounts/new" className={buttonVariants({ variant: 'primary' })}>
+              Add account
+            </Link>
+          ) : undefined
         }
       />
 

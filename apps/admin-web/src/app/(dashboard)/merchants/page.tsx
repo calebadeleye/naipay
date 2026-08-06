@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDate } from '@/lib/format';
 import { useMerchants } from '@/lib/merchants/use-merchants';
 import type { KycStatusKey, OnboardingStatusKey } from '@/lib/merchants/types';
@@ -50,6 +51,7 @@ export default function MerchantsPage() {
   const [search, setSearch] = useState('');
   const [onboardingStatus, setOnboardingStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('merchants.create');
 
   const { data, isLoading, error } = useMerchants({
     search: search || undefined,
@@ -62,11 +64,13 @@ export default function MerchantsPage() {
     <>
       <PageHeader
         title="Merchants"
-        description="Every merchant onboarded to Naipay, from a draft profile through approval and, eventually, closure."
+        description="Every merchant onboarded to the platform, from a draft profile through approval and, eventually, closure."
         actions={
-          <Link href="/merchants/new" className={buttonVariants({ variant: 'primary' })}>
-            New merchant
-          </Link>
+          canCreate ? (
+            <Link href="/merchants/new" className={buttonVariants({ variant: 'primary' })}>
+              New merchant
+            </Link>
+          ) : undefined
         }
       />
 

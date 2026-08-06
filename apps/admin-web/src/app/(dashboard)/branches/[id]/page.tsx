@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
 import { ReasonActionButton } from '@/components/ui/workflow-action';
 import { formatDate, formatDateTime } from '@/lib/format';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { useBranch, useChangeBranchStatus, useUpdateBranch } from '@/lib/branches/use-branches';
 import type { Branch, BranchFormInput, BranchStatusKey } from '@/lib/branches/types';
 
@@ -61,6 +62,7 @@ export default function BranchDetailPage() {
   const { data: branch, isLoading, error } = useBranch(id);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<BranchFormInput | null>(null);
+  const canManage = useHasPermission('branches.manage');
 
   const updateBranch = useUpdateBranch(id);
   const changeStatus = useChangeBranchStatus(id);
@@ -98,7 +100,7 @@ export default function BranchDetailPage() {
             actions={
               <div className="flex items-center gap-2">
                 <Badge tone={statusTone[branch.status]}>{branch.status_label}</Badge>
-                {!editing ? (
+                {!editing && canManage ? (
                   <Button type="button" variant="secondary" onClick={() => startEditing(branch)}>
                     Edit
                   </Button>
@@ -107,26 +109,28 @@ export default function BranchDetailPage() {
             }
           />
 
-          <Card>
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Workflow</h2>
-            <div className="flex flex-wrap items-start gap-3">
-              {statusTransitions[branch.status].map((target) => (
-                <ReasonActionButton
-                  key={target}
-                  label={`Mark as ${statusLabels[target]}`}
-                  variant={target === 'closed' || target === 'suspended' ? 'destructive' : 'secondary'}
-                  reasonLabel="Reason"
-                  onConfirm={(reason) => changeStatus.mutateAsync({ status: target, reason })}
-                />
-              ))}
-              {statusTransitions[branch.status].length === 0 ? (
-                <p className="text-sm text-slate-500">No further transitions — this branch is closed.</p>
-              ) : null}
-            </div>
-            <p className="mt-3 text-xs text-slate-500">
-              There is no delete: every loan and repayment booked here names this branch permanently.
-            </p>
-          </Card>
+          {canManage ? (
+            <Card>
+              <h2 className="mb-4 text-sm font-semibold text-slate-900">Workflow</h2>
+              <div className="flex flex-wrap items-start gap-3">
+                {statusTransitions[branch.status].map((target) => (
+                  <ReasonActionButton
+                    key={target}
+                    label={`Mark as ${statusLabels[target]}`}
+                    variant={target === 'closed' || target === 'suspended' ? 'destructive' : 'secondary'}
+                    reasonLabel="Reason"
+                    onConfirm={(reason) => changeStatus.mutateAsync({ status: target, reason })}
+                  />
+                ))}
+                {statusTransitions[branch.status].length === 0 ? (
+                  <p className="text-sm text-slate-500">No further transitions — this branch is closed.</p>
+                ) : null}
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                There is no delete: every loan and repayment booked here names this branch permanently.
+              </p>
+            </Card>
+          ) : null}
 
           {editing && form ? (
             <Card className="max-w-2xl">

@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 
 export function useReauthenticate() {
   return useMutation({
-    mutationFn: (input: { password: string; code?: string }) =>
+    mutationFn: (input: { password: string; code?: string; operation?: string }) =>
       api.post<Record<string, never>>('/admin/auth/reauthenticate', input),
   });
 }
@@ -21,8 +21,17 @@ export function useReauthenticate() {
  * On a 428, the pending input is held and a reauthentication prompt is shown
  * in its place; confirming it transparently retries the original action, so
  * the caller never has to know the step happened.
+ *
+ * `operation` names which entry in reauthentication_required_operations this
+ * protects — pass it for an operation listed in
+ * reauthentication_two_factor_optional_operations (e.g. `staff.role_change`)
+ * so the server accepts a password-only confirmation; omit it for anything
+ * else and a two-factor code is required exactly as before.
  */
-export function useProtectedAction<TInput, TResult>(action: (input: TInput) => Promise<TResult>) {
+export function useProtectedAction<TInput, TResult>(
+  action: (input: TInput) => Promise<TResult>,
+  operation?: string,
+) {
   const reauthenticate = useReauthenticate();
   const [pending, setPending] = useState<TInput | null>(null);
   const [running, setRunning] = useState(false);
@@ -58,7 +67,7 @@ export function useProtectedAction<TInput, TResult>(action: (input: TInput) => P
 
   async function confirmReauthentication(password: string, code?: string): Promise<TResult | undefined> {
     try {
-      await reauthenticate.mutateAsync({ password, code });
+      await reauthenticate.mutateAsync({ password, code, operation });
     } catch {
       // Surfaced via `reauthenticationError` below; the prompt stays open so
       // the operator can correct the password or code and try again.

@@ -10,10 +10,10 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
 import { ReauthPrompt } from '@/components/auth/reauth-prompt';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useProtectedAction } from '@/lib/auth/use-reauthenticate';
 import { useBranchOptions } from '@/lib/branches/use-branches';
-import { useCreateStaff } from '@/lib/staff/use-staff';
-import { ROLE_OPTIONS } from '@/lib/staff/types';
+import { useAssignableRoleOptions, useCreateStaff } from '@/lib/staff/use-staff';
 import type { StaffFormInput, StaffMember } from '@/lib/staff/types';
 
 const accessScopeOptions = [
@@ -37,15 +37,28 @@ const emptyForm: StaffFormInput = {
 };
 
 export default function NewStaffPage() {
+  return (
+    <RequirePermission permission="staff.create">
+      <NewStaffForm />
+    </RequirePermission>
+  );
+}
+
+function NewStaffForm() {
   const [form, setForm] = useState<StaffFormInput>(emptyForm);
   const { data: branchOptions } = useBranchOptions();
+  const roleOptions = useAssignableRoleOptions();
   const createStaff = useCreateStaff();
 
   const [created, setCreated] = useState<{ staff: StaffMember; temporary_password: string } | null>(null);
 
   // Assigning a role — even at creation — is gated by the same
-  // reauthentication requirement as any other privilege grant.
-  const protectedCreate = useProtectedAction((input: StaffFormInput) => createStaff.mutateAsync(input));
+  // reauthentication requirement as any other privilege grant, but accepts
+  // a password alone: see reauthentication_two_factor_optional_operations.
+  const protectedCreate = useProtectedAction(
+    (input: StaffFormInput) => createStaff.mutateAsync(input),
+    'staff.role_change',
+  );
   const error = createStaff.error instanceof ApiError ? createStaff.error : protectedCreate.actionError;
 
   function set<K extends keyof StaffFormInput>(key: K, value: StaffFormInput[K]) {
@@ -75,6 +88,7 @@ export default function NewStaffPage() {
           <ReauthPrompt
             pending={protectedCreate.reauthenticating}
             error={protectedCreate.reauthenticationError}
+            twoFactorOptional
             onCancel={protectedCreate.cancelReauthentication}
             onConfirm={async (password, code) => {
               const result = await protectedCreate.confirmReauthentication(password, code);
@@ -212,7 +226,7 @@ export default function NewStaffPage() {
           <div className="rounded-md border border-slate-200 p-4">
             <h3 className="mb-3 text-sm font-semibold text-slate-900">Roles</h3>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {ROLE_OPTIONS.map((role) => (
+              {roleOptions.map((role) => (
                 <label key={role.value} className="flex items-start gap-2 text-sm text-slate-800">
                   <input
                     type="checkbox"

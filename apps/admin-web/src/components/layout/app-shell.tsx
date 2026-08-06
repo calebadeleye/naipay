@@ -1,11 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { navSections } from '@/components/layout/nav-config';
+import { visibleNavSections } from '@/components/layout/nav-config';
 import { useCurrentStaff, useLogout } from '@/lib/auth/use-auth';
 import { cn } from '@/lib/cn';
 
@@ -18,19 +19,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const logout = useLogout();
   const pathname = usePathname();
 
+  // Empty until `staff` loads, rather than briefly showing every section:
+  // a screen a staff member can't reach shouldn't flash into view even for
+  // one render.
+  const navSections = visibleNavSections(staff?.permissions ?? []);
+
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
-        <div className="flex h-16 items-center border-b border-slate-200 px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-brand-700">
-            Naipay
+    <div className="flex min-h-screen">
+      <aside className="glass-surface-dark fixed inset-y-0 left-0 hidden w-64 flex-col rounded-none lg:flex">
+        <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/every_logo_mark.png" alt="" width={28} height={28} className="shrink-0" priority />
+            <span className="text-lg font-semibold tracking-tight text-white">Every Merchant</span>
           </Link>
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
           {navSections.map((section) => (
             <div key={section.label}>
-              <p className="px-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+              <p className="px-3 text-xs font-semibold tracking-wide text-brand-300 uppercase">
                 {section.label}
               </p>
 
@@ -45,10 +52,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                         href={item.href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                          'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          'flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors',
                           active
-                            ? 'bg-brand-50 text-brand-700'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                            ? 'border-accent-400 bg-white/15 text-white shadow-inner shadow-black/10'
+                            : 'border-transparent text-brand-100 hover:bg-white/10 hover:text-white',
                         )}
                       >
                         <Icon className="size-4 shrink-0" aria-hidden />
@@ -64,15 +71,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+        <header className="glass-surface sticky top-0 z-10 flex h-16 items-center justify-between rounded-none border-x-0 border-t-0 px-6">
           <div />
 
           <div className="flex items-center gap-4">
             {staff ? (
-              <div className="text-right">
+              <Link href="/account" className="text-right hover:opacity-80">
                 <p className="text-sm font-medium text-slate-900">{staff.full_name}</p>
                 <p className="text-xs text-slate-500">{staff.job_title ?? staff.roles[0]}</p>
-              </div>
+              </Link>
             ) : null}
 
             <button
@@ -87,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-8">
+        <main className="glass-scrim flex-1 px-6 py-8">
           <div className="mx-auto max-w-6xl space-y-6">{children}</div>
         </main>
       </div>

@@ -9,6 +9,7 @@ use App\Support\Http\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,8 +73,21 @@ final class ApiExceptionRenderer
                 $this->missingResourceMessage($e)
             ),
 
+            // A unique-constraint violation reaching this far means a request
+            // slipped past validation (an auto-generated value colliding, a
+            // race between two requests). The operator still deserves a clean
+            // message instead of a raw SQL error.
+            $e instanceof QueryException && $this->isDuplicateEntry($e) => $this->renderDuplicateEntry($e),
+
+            // Thrown both when no route matches at all (Symfony leaves the
+            // message empty) and by an application-level `abort(404, '...')`
+            // (which carries a real, meaningful message — e.g. a merchant
+            // outside the caller's branch). Only the former should say
+            // "endpoint does not exist"; the latter must survive verbatim,
+            // or every deliberate not-found response looks like a broken
+            // route to whoever reads it.
             $e instanceof NotFoundHttpException => ApiResponse::notFound(
-                'The requested endpoint does not exist.'
+                $e->getMessage() !== '' ? $e->getMessage() : 'The requested endpoint does not exist.'
             ),
 
             $e instanceof MethodNotAllowedHttpException => ApiResponse::error(
@@ -115,6 +129,61 @@ final class ApiExceptionRenderer
         }
 
         return ApiResponse::error($e->getMessage(), $e->errors(), $e->status());
+    }
+
+    private function isDuplicateEntry(QueryException $e): bool
+    {
+        // 1062 is MySQL's "Duplicate entry" — the only integrity violation
+        // that maps to something a user caused and can fix.
+        return ($e->errorInfo[1] ?? null) === 1062;
+    }
+
+    private function renderDuplicateEntry(QueryException $e): JsonResponse
+    {
+        Log::warning('Unique constraint violated.', [
+            'message' => $e->getMessage(),
+            'correlation_id' => Correlation::id(),
+        ]);
+
+        $field = $this->duplicateField($e);
+
+        // Returned as a conflict rather than a field-level validation error:
+        // the colliding column (a generated reference like a branch code, for
+        // instance) is not always one a form even exposes, so a message tied
+        // to a field nobody can see would render invisibly. A top-level
+        // conflict always surfaces.
+        return ApiResponse::conflict(
+            $field !== null
+                ? 'This '.str_replace('_', ' ', $field).' is already in use. Please try again.'
+                : 'This could not be saved because it duplicates an existing record.',
+        );
+    }
+
+    /**
+     * Best-effort mapping from the unique key MySQL names in its error
+     * message back to the column that violated it, purely to name it in the
+     * message above. Relies on Laravel's default `{table}_{column}_unique`
+     * naming — falls back to a generic message when a key doesn't follow it.
+     */
+    private function duplicateField(QueryException $e): ?string
+    {
+        if (! preg_match("/for key '(?:\w+\.)?(\w+)'/", $e->getMessage(), $keyMatch)) {
+            return null;
+        }
+
+        $key = $keyMatch[1];
+
+        if (! preg_match('/`(\w+)`\s*\(/', $e->getSql() ?? '', $tableMatch)) {
+            return null;
+        }
+
+        $column = preg_replace(
+            ['/^'.preg_quote($tableMatch[1].'_', '/').'/', '/_unique$/'],
+            '',
+            $key,
+        );
+
+        return $column !== '' && $column !== $key ? $column : null;
     }
 
     /**

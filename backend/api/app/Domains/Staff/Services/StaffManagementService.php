@@ -7,6 +7,8 @@ namespace App\Domains\Staff\Services;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Branches\Models\Branch;
+use App\Domains\Identity\Enums\AccessScope;
+use App\Domains\Identity\Enums\Role as RoleEnum;
 use App\Domains\Identity\Enums\StaffStatus;
 use App\Domains\Identity\Models\Staff;
 use App\Domains\Identity\Services\AuthenticationService;
@@ -258,10 +260,14 @@ final class StaffManagementService
         $this->assertNotSelf($staff, $actor, 'change your own roles');
         $this->makerChecker->assertRecentlyReauthenticated($actor, 'staff.role_change');
 
-        $apply = function () use ($staff, $roles, $actor): Staff {
-            $previous = $staff->roleNames()->all();
+        $previousRoles = $staff->roleNames()->all();
+        $this->ensureCanGrantRoles($roles, $previousRoles);
+
+        $apply = function () use ($staff, $roles, $actor, $previousRoles): Staff {
+            $previous = $previousRoles;
 
             $staff->syncRoles($roles);
+            $this->ensureAccessScopeMatchesRole($staff, $roles);
 
             $this->audit->record(
                 action: 'staff.roles_changed',
@@ -347,6 +353,61 @@ final class StaffManagementService
         });
 
         return $temporaryPassword;
+    }
+
+    /**
+     * The Super Administrator role can never be granted through staff
+     * management — not by a Super Administrator, not by anyone.
+     *
+     * There is exactly one Super Administrator, seeded once at install time
+     * (SuperAdministratorSeeder), and no code path — including this one —
+     * ever creates a second. Letting even an existing Super Administrator
+     * hand the role to someone else would turn "exactly one" into "however
+     * many the current holder feels like appointing", defeating the point of
+     * the restriction. Compared against `$previousRoles` rather than the
+     * target's current roles so that editing an existing Super
+     * Administrator's other roles doesn't require this check to pass on a
+     * role nobody is newly granting.
+     *
+     * @param  array<int, string>  $roles
+     * @param  array<int, string>  $previousRoles
+     */
+    private function ensureCanGrantRoles(array $roles, array $previousRoles): void
+    {
+        $newlyGranted = array_diff($roles, $previousRoles);
+
+        if (! in_array(RoleEnum::SuperAdministrator->value, $newlyGranted, true)) {
+            return;
+        }
+
+        throw new DomainException(
+            'The Super Administrator role cannot be granted through staff management. There is only ever one, assigned once at installation.',
+        );
+    }
+
+    /**
+     * A Super Administrator whose access scope is still branch- or
+     * department-limited can end up locked out of records they themselves
+     * just created — MerchantOnboardingService::create() defaults a new
+     * record's branch to its creator's, so a scope-limited creator with no
+     * branch of their own produces a record nobody, including them, can then
+     * open. The role already grants every permission; a scope narrower than
+     * "the whole organisation" for it is never intentional, so it is
+     * corrected here rather than left for someone to notice as a 404.
+     *
+     * @param  array<int, string>  $roles
+     */
+    private function ensureAccessScopeMatchesRole(Staff $staff, array $roles): void
+    {
+        if (! in_array(RoleEnum::SuperAdministrator->value, $roles, true)) {
+            return;
+        }
+
+        if ($staff->access_scope === AccessScope::Global) {
+            return;
+        }
+
+        $staff->forceFill(['access_scope' => AccessScope::Global])->save();
     }
 
     private function assertNotSelf(Staff $subject, Staff $actor, string $operation): void

@@ -29,7 +29,7 @@ export function QueryState({ isLoading, error, children }: QueryStateProps) {
 
   if (error) {
     const message =
-      error instanceof ApiError ? error.message : 'Could not reach Naipay. Try again shortly.';
+      error instanceof ApiError ? error.message : 'Could not reach Every Merchant. Try again shortly.';
     const reference = error instanceof ApiError ? error.correlationId : null;
 
     return (

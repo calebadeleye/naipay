@@ -77,7 +77,7 @@ export default function TwoFactorEnrolPage() {
       description={
         staff?.two_factor.required
           ? 'Your role requires two-factor authentication. Set it up to continue.'
-          : 'Add a second factor to your Naipay account.'
+          : 'Add a second factor to your Every Merchant account.'
       }
     >
       <div className="space-y-5">

@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { useStaffList } from '@/lib/staff/use-staff';
 import type { StaffStatusKey } from '@/lib/staff/types';
 
@@ -33,6 +34,7 @@ export default function StaffPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('staff.create');
 
   const { data, isLoading, error } = useStaffList({
     search: search || undefined,
@@ -47,9 +49,11 @@ export default function StaffPage() {
         title="Staff"
         description="Every officer with access to this console. Roles and approval limits decide what they can do, not the account itself."
         actions={
-          <Link href="/staff/new" className={buttonVariants({ variant: 'primary' })}>
-            New staff member
-          </Link>
+          canCreate ? (
+            <Link href="/staff/new" className={buttonVariants({ variant: 'primary' })}>
+              New staff member
+            </Link>
+          ) : undefined
         }
       />
 

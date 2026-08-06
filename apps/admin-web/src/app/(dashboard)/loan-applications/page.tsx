@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useLoanApplications } from '@/lib/loan-applications/use-loan-applications';
 import type { LoanApplicationStatusKey } from '@/lib/loan-applications/types';
@@ -42,6 +43,7 @@ export default function LoanApplicationsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('loan_applications.create');
 
   const { data, isLoading, error } = useLoanApplications({
     search: search || undefined,
@@ -56,9 +58,11 @@ export default function LoanApplicationsPage() {
         title="Loan applications"
         description="Applications moving through assessment, recommendation and approval."
         actions={
-          <Link href="/loan-applications/new" className={buttonVariants({ variant: 'primary' })}>
-            New application
-          </Link>
+          canCreate ? (
+            <Link href="/loan-applications/new" className={buttonVariants({ variant: 'primary' })}>
+              New application
+            </Link>
+          ) : undefined
         }
       />
 

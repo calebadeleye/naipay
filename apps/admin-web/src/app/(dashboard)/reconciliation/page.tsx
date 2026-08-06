@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useReconciliations } from '@/lib/reconciliation/use-reconciliation';
 import type { BankReconciliationStatusKey } from '@/lib/reconciliation/types';
@@ -30,6 +31,7 @@ const statusOptions = [
 export default function ReconciliationPage() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('reconciliation.match');
 
   const { data, isLoading, error } = useReconciliations({
     status: status || undefined,
@@ -43,9 +45,11 @@ export default function ReconciliationPage() {
         title="Bank reconciliation"
         description="Manual, statement-by-statement: every line is transcribed and matched to a repayment or a loan disbursement."
         actions={
-          <Link href="/reconciliation/new" className={buttonVariants({ variant: 'primary' })}>
-            Open reconciliation
-          </Link>
+          canCreate ? (
+            <Link href="/reconciliation/new" className={buttonVariants({ variant: 'primary' })}>
+              Open reconciliation
+            </Link>
+          ) : undefined
         }
       />
 

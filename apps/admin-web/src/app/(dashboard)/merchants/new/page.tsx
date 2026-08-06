@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useCreateMerchant } from '@/lib/merchants/use-merchants';
 import type { MerchantFormInput } from '@/lib/merchants/types';
 
@@ -37,6 +38,14 @@ const emptyForm: MerchantFormInput = {
 };
 
 export default function NewMerchantPage() {
+  return (
+    <RequirePermission permission="merchants.create">
+      <NewMerchantForm />
+    </RequirePermission>
+  );
+}
+
+function NewMerchantForm() {
   const router = useRouter();
   const [form, setForm] = useState<MerchantFormInput>(emptyForm);
   const createMerchant = useCreateMerchant();

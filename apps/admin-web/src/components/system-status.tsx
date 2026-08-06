@@ -36,7 +36,7 @@ export function SystemStatus() {
       <Panel>
         <div className="flex items-center gap-3 text-slate-600">
           <Loader2 className="size-5 animate-spin" aria-hidden />
-          <span>Checking connection to the Naipay API…</span>
+          <span>Checking connection to the Every Merchant API…</span>
         </div>
       </Panel>
     );
@@ -46,14 +46,14 @@ export function SystemStatus() {
     const message =
       error instanceof ApiError || error instanceof NetworkError
         ? error.message
-        : 'The Naipay API could not be reached.';
+        : 'The Every Merchant API could not be reached.';
 
     return (
       <Panel tone="danger">
         <div className="flex items-start gap-3">
           <XCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
           <div className="space-y-1">
-            <p className="font-medium text-slate-900">Cannot reach the Naipay API</p>
+            <p className="font-medium text-slate-900">Cannot reach the Every Merchant API</p>
             <p className="text-sm text-slate-600">{message}</p>
             {error instanceof ApiError && error.correlationId ? (
               <p className="numeric text-xs text-slate-500">

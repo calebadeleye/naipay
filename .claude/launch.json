@@ -9,8 +9,11 @@
     },
     {
       "name": "naipay-api",
-      "runtimeExecutable": "/usr/local/opt/php@8.3/bin/php",
-      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd backend/api && /usr/local/opt/php@8.3/bin/php artisan serve --host=127.0.0.1 --port=8000"
+      ],
       "port": 8000
     }
   ]

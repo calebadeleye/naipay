@@ -7,6 +7,7 @@ namespace App\Domains\Branches\Database\Seeders;
 use App\Domains\Branches\Enums\BranchStatus;
 use App\Domains\Branches\Models\Branch;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Creates the head office.
@@ -29,6 +30,21 @@ final class HeadOfficeSeeder extends Seeder
                 'status' => BranchStatus::Active,
                 'opened_at' => now()->toDateString(),
             ],
+        );
+
+        // The branch above is created directly with a hardcoded code rather
+        // than through ReferenceGenerator, so its sequence counter is never
+        // advanced by that insert. Left alone, the counter starts at 0 and
+        // the first branch created through the console is allocated
+        // NPBR-001 too, colliding with the seeded head office. GREATEST
+        // keeps this idempotent and never moves the counter backwards.
+        $now = now();
+
+        DB::statement(
+            'INSERT INTO reference_sequences (name, period, current_value, created_at, updated_at)
+             VALUES (?, ?, 1, ?, ?)
+             ON DUPLICATE KEY UPDATE current_value = GREATEST(current_value, 1)',
+            ['branch', 'ALL', $now, $now],
         );
     }
 }

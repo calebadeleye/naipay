@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { LoanProductForm } from '@/components/loan-products/loan-product-form';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useCreateLoanProduct } from '@/lib/loan-products/use-loan-products';
 import type { LoanProductFormInput } from '@/lib/loan-products/types';
 
@@ -38,6 +39,14 @@ const emptyForm: LoanProductFormInput = {
 };
 
 export default function NewLoanProductPage() {
+  return (
+    <RequirePermission permission="loan_products.manage">
+      <NewLoanProductForm />
+    </RequirePermission>
+  );
+}
+
+function NewLoanProductForm() {
   const router = useRouter();
   const [form, setForm] = useState<LoanProductFormInput>(emptyForm);
   const createProduct = useCreateLoanProduct();

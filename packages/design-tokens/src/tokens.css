@@ -3,21 +3,36 @@
  *
  * Imported by every Naipay frontend so the admin console, merchant portal and
  * any web view in the mobile app share one source of truth for colour.
+ *
+ * Brand and accent are anchored to the Every Merchant mark (purple + teal).
  */
 
 :root {
   /* Brand */
-  --naipay-brand-50: #eefbf3;
-  --naipay-brand-100: #d6f5e3;
-  --naipay-brand-200: #b0e9cb;
-  --naipay-brand-300: #7dd7ac;
-  --naipay-brand-400: #47bc89;
-  --naipay-brand-500: #22a06b;
-  --naipay-brand-600: #158055;
-  --naipay-brand-700: #126647;
-  --naipay-brand-800: #12513a;
-  --naipay-brand-900: #0f4331;
-  --naipay-brand-950: #04261c;
+  --naipay-brand-50: #f8f6f9;
+  --naipay-brand-100: #f0eaf2;
+  --naipay-brand-200: #e0d4e5;
+  --naipay-brand-300: #cdb9d5;
+  --naipay-brand-400: #b598c0;
+  --naipay-brand-500: #9267a3;
+  --naipay-brand-600: #7b578a;
+  --naipay-brand-700: #62446d;
+  --naipay-brand-800: #493251;
+  --naipay-brand-900: #35243b;
+  --naipay-brand-950: #231727;
+
+  /* Accent */
+  --naipay-accent-50: #eff9fa;
+  --naipay-accent-100: #dcf2f4;
+  --naipay-accent-200: #bce6eb;
+  --naipay-accent-300: #99d8e0;
+  --naipay-accent-400: #6ec8d3;
+  --naipay-accent-500: #3bb4c4;
+  --naipay-accent-600: #339ba9;
+  --naipay-accent-700: #2a808b;
+  --naipay-accent-800: #20646d;
+  --naipay-accent-900: #184b52;
+  --naipay-accent-950: #103337;
 
   /* Neutrals */
   --naipay-neutral-0: #ffffff;

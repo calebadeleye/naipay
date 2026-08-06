@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Domains\Identity\Services;
 
 use App\Domains\Identity\Data\AuthenticationResult;
+use App\Domains\Identity\Enums\StaffStatus;
 use App\Domains\Identity\Exceptions\AuthenticationFailedException;
 use App\Domains\Identity\Models\LoginAttempt;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Identity\Notifications\StaffSignedInNotification;
 use App\Domains\Identity\Support\RequestContext;
 use App\Support\Correlation;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -187,8 +190,13 @@ final class AuthenticationService
      *
      * @throws AuthenticationFailedException
      */
-    public function reauthenticate(Staff $staff, string $password, ?string $twoFactorCode, RequestContext $context): void
-    {
+    public function reauthenticate(
+        Staff $staff,
+        string $password,
+        ?string $twoFactorCode,
+        RequestContext $context,
+        ?string $operation = null,
+    ): void {
         if (! Hash::check($password, $staff->password)) {
             $this->registerFailure($staff);
             $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_CREDENTIALS, $context);
@@ -196,8 +204,21 @@ final class AuthenticationService
             throw AuthenticationFailedException::invalidCredentials();
         }
 
+        $twoFactorVerified = false;
+
         if ($staff->hasTwoFactorEnabled()) {
-            if ($twoFactorCode === null || ! $this->twoFactor->verifyChallenge($staff, $twoFactorCode)) {
+            $codeRequired = $operation === null || ! $this->twoFactorOptionalFor($operation);
+
+            if ($twoFactorCode !== null) {
+                if (! $this->twoFactor->verifyChallenge($staff, $twoFactorCode)) {
+                    $this->registerFailure($staff);
+                    $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_TWO_FACTOR, $context);
+
+                    throw AuthenticationFailedException::invalidTwoFactorCode();
+                }
+
+                $twoFactorVerified = true;
+            } elseif ($codeRequired) {
                 $this->registerFailure($staff);
                 $this->recordAttempt($staff, $staff->email, false, LoginAttempt::FAILURE_INVALID_TWO_FACTOR, $context);
 
@@ -210,8 +231,25 @@ final class AuthenticationService
         $token = $staff->currentAccessToken();
 
         if ($token instanceof PersonalAccessToken) {
-            $token->forceFill(['reauthenticated_at' => now()])->save();
+            $token->forceFill([
+                'reauthenticated_at' => now(),
+                'reauthenticated_with_two_factor' => $twoFactorVerified,
+            ])->save();
         }
+    }
+
+    /**
+     * Whether `$operation` accepts a password-only reauthentication even
+     * when the account has two-factor enabled. See
+     * naipay.security.reauthentication_two_factor_optional_operations.
+     */
+    private function twoFactorOptionalFor(string $operation): bool
+    {
+        return in_array(
+            $operation,
+            (array) config('naipay.security.reauthentication_two_factor_optional_operations', []),
+            true,
+        );
     }
 
     /**
@@ -280,11 +318,42 @@ final class AuthenticationService
         $staff->forceFill([
             'last_login_at' => now(),
             'last_login_ip' => $context->ipAddress,
+            // A pending account activates on its own first successful sign-in
+            // — there is no separate "activate" step. What proves it reached
+            // the intended recipient is the temporary password (and the
+            // forced password change / 2FA enrolment that follows), not an
+            // administrator's say-so.
+            'status' => $staff->status === StaffStatus::PendingActivation ? StaffStatus::Active : $staff->status,
         ])->save();
 
         $this->recordAttempt($staff, $staff->email, true, null, $context);
+        $this->notifySuperAdministratorsOfSignIn($staff, $context);
 
         return $newToken->plainTextToken;
+    }
+
+    /**
+     * Makes every other active Super Administrator passively aware that a
+     * sign-in happened — a lightweight security signal, not the audit trail
+     * itself (LoginAttempt already covers that). The signer is excluded: a
+     * Super Administrator does not need telling about their own sign-in.
+     */
+    private function notifySuperAdministratorsOfSignIn(Staff $staff, RequestContext $context): void
+    {
+        $recipients = Staff::query()
+            ->whereKeyNot($staff->getKey())
+            ->where('status', StaffStatus::Active->value)
+            ->whereHas('roles', fn ($query) => $query->where('name', 'super-administrator'))
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        Notification::send(
+            $recipients,
+            new StaffSignedInNotification($staff, now(), $context->ipAddress, $context->deviceName),
+        );
     }
 
     /**

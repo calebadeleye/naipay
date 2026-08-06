@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
 import { QueryState } from '@/components/ui/query-state';
+import { RequirePermission } from '@/components/auth/require-permission';
 import {
   useBusinessTypeOptions,
   useCategoryOptions,
@@ -40,6 +41,14 @@ const emptyForm: BusinessFormInput = {
 };
 
 export default function NewBusinessPage() {
+  return (
+    <RequirePermission permission="businesses.create">
+      <NewBusinessForm />
+    </RequirePermission>
+  );
+}
+
+function NewBusinessForm() {
   const params = useParams<{ id: string }>();
   const merchantId = params.id;
   const router = useRouter();

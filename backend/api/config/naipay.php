@@ -86,6 +86,7 @@ return [
         'reversal' => ['pattern' => 'NPV-{YEAR}-{SEQ}', 'padding' => 6],
         'staff' => ['pattern' => 'NPS-{SEQ}', 'padding' => 5],
         'branch' => ['pattern' => 'NPBR-{SEQ}', 'padding' => 3],
+        'investor' => ['pattern' => 'NPI-{SEQ}', 'padding' => 5],
     ],
 
     /*
@@ -328,6 +329,14 @@ return [
             'bank_account.change',
             'staff.role_change',
             'settings.manage',
+        ],
+
+        // Operations above where a password alone satisfies reauthentication
+        // even when the account has two-factor enabled — a lower bar than
+        // the financial operations above it, which always demand a
+        // two-factor-backed reauthentication when the account has one.
+        'reauthentication_two_factor_optional_operations' => [
+            'staff.role_change',
         ],
 
         // How long a step-up authentication remains valid before the next

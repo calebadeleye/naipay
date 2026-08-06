@@ -34,9 +34,15 @@ enum StaffStatus: string
         };
     }
 
+    /**
+     * A pending account may sign in — its first successful sign-in is what
+     * activates it, proven by the temporary password (and 2FA enrolment or
+     * forced password change that follows). See
+     * AuthenticationService::issueToken().
+     */
     public function canAuthenticate(): bool
     {
-        return $this === self::Active;
+        return $this === self::Active || $this === self::PendingActivation;
     }
 
     /**

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Investors\Models\Investor;
 
 return [
 
@@ -43,14 +44,23 @@ return [
      * Naipay is API-only and stateless: administrative clients authenticate
      * with Sanctum bearer tokens, so there is no session guard.
      *
-     * The merchant portal will add a second guard here — `merchant`, backed by
-     * its own provider and model — so that a merchant token can never satisfy
-     * an administrative endpoint.
+     * `investor` is a second, deliberately separate guard: Sanctum validates
+     * a token's provider against the guard it is presented to (see
+     * Guard::hasValidProvider()), so an investor's read-only token can never
+     * satisfy an `auth:staff` route no matter how routing evolves, and vice
+     * versa.
+     *
+     * The merchant portal will add a third guard here — `merchant`, backed by
+     * its own provider and model — for the same reason.
      */
     'guards' => [
         'staff' => [
             'driver' => 'sanctum',
             'provider' => 'staff',
+        ],
+        'investor' => [
+            'driver' => 'sanctum',
+            'provider' => 'investor',
         ],
     ],
 
@@ -75,6 +85,10 @@ return [
         'staff' => [
             'driver' => 'eloquent',
             'model' => Staff::class,
+        ],
+        'investor' => [
+            'driver' => 'eloquent',
+            'model' => Investor::class,
         ],
     ],
 

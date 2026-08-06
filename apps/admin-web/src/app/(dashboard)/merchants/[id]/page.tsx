@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
 import { ActionButton, ReasonActionButton } from '@/components/ui/workflow-action';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDateTime, formatMoney, maskIdentityNumber } from '@/lib/format';
 import {
   useApproveMerchant,
@@ -55,6 +56,7 @@ export default function MerchantDetailPage() {
   const id = params.id;
 
   const { data: merchant, isLoading, error } = useMerchant(id);
+  const canCreateBusiness = useHasPermission('businesses.create');
 
   const submit = useSubmitMerchant(id);
   const verify = useVerifyMerchant(id);
@@ -190,12 +192,14 @@ export default function MerchantDetailPage() {
               <h2 className="text-sm font-semibold text-slate-900">
                 Businesses {merchant.businesses_count ? `(${merchant.businesses_count})` : ''}
               </h2>
-              <Link
-                href={`/merchants/${merchant.id}/businesses/new`}
-                className={buttonVariants({ variant: 'secondary', size: 'sm' })}
-              >
-                Add business
-              </Link>
+              {canCreateBusiness ? (
+                <Link
+                  href={`/merchants/${merchant.id}/businesses/new`}
+                  className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+                >
+                  Add business
+                </Link>
+              ) : null}
             </div>
 
             {merchant.businesses && merchant.businesses.length > 0 ? (

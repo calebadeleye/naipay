@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useRepayments } from '@/lib/repayments/use-repayments';
 import type { RepaymentStatusKey } from '@/lib/repayments/types';
@@ -36,6 +37,7 @@ export default function RepaymentsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('repayments.record');
 
   const { data, isLoading, error } = useRepayments({
     search: search || undefined,
@@ -50,9 +52,11 @@ export default function RepaymentsPage() {
         title="Repayments"
         description="Recording and verifying a repayment never moves money — only approval allocates it and posts the ledger entry."
         actions={
-          <Link href="/repayments/new" className={buttonVariants({ variant: 'primary' })}>
-            Record repayment
-          </Link>
+          canCreate ? (
+            <Link href="/repayments/new" className={buttonVariants({ variant: 'primary' })}>
+              Record repayment
+            </Link>
+          ) : undefined
         }
       />
 

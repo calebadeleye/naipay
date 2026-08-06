@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { useBankAccountOptions } from '@/lib/bank-accounts/use-bank-accounts';
 import { useOpenReconciliation } from '@/lib/reconciliation/use-reconciliation';
 import type { OpenReconciliationInput } from '@/lib/reconciliation/types';
@@ -23,6 +24,14 @@ const emptyForm: OpenReconciliationInput = {
 };
 
 export default function NewReconciliationPage() {
+  return (
+    <RequirePermission permission="reconciliation.match">
+      <NewReconciliationForm />
+    </RequirePermission>
+  );
+}
+
+function NewReconciliationForm() {
   const router = useRouter();
   const [form, setForm] = useState<OpenReconciliationInput>(emptyForm);
   const { data: bankAccounts } = useBankAccountOptions();

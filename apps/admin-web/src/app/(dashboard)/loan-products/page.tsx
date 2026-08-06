@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatMoney } from '@/lib/format';
 import { useLoanProducts } from '@/lib/loan-products/use-loan-products';
 
@@ -24,6 +25,7 @@ export default function LoanProductsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const canCreate = useHasPermission('loan_products.manage');
 
   const { data, isLoading, error } = useLoanProducts({
     search: search || undefined,
@@ -38,9 +40,11 @@ export default function LoanProductsPage() {
         title="Loan products"
         description="The priced products available to sell. Changing a product only affects loans booked from now on."
         actions={
-          <Link href="/loan-products/new" className={buttonVariants({ variant: 'primary' })}>
-            New product
-          </Link>
+          canCreate ? (
+            <Link href="/loan-products/new" className={buttonVariants({ variant: 'primary' })}>
+              New product
+            </Link>
+          ) : undefined
         }
       />
 
