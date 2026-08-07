@@ -31,10 +31,10 @@ final class MerchantApprovedNotification extends Notification implements ShouldQ
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Welcome to Naipay — your account is approved')
+            ->subject('Welcome to Every Merchant — your account is approved')
             ->greeting("Hello {$notifiable->fullName()},")
             ->line("Your onboarding is complete and your merchant account ({$notifiable->merchant_number}) is now active.")
             ->line('You can now apply for a loan through your assigned loan officer.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

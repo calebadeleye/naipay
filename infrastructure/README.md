@@ -5,7 +5,7 @@ Deployment assets for Naipay on the NAI TALK server infrastructure.
 | Directory | Contents |
 | --- | --- |
 | `deployment/` | Deploy scripts, migration and rollback procedures, backup jobs |
-| `apache/` | Virtual host configuration for `naipay.naitalk.com` |
+| `apache/` | Virtual host configuration for `everymerchant.naitalk.com` |
 | `nginx/` | Reverse proxy configuration, as an alternative to Apache |
 | `docker/` | Container definitions for local environment parity |
 

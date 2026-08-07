@@ -33,12 +33,12 @@ final class TwoFactorEmailCodeNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Your Naipay verification code is {$this->code}")
+            ->subject("Your Every Merchant verification code is {$this->code}")
             ->greeting("Hello {$notifiable->first_name},")
-            ->line('Use this code to finish signing in to Naipay:')
+            ->line('Use this code to finish signing in to Every Merchant:')
             ->line("## {$this->code}")
             ->line("This code expires in {$this->expiresInMinutes} minutes and can be used once.")
             ->line('If you did not try to sign in, change your password and tell your administrator.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

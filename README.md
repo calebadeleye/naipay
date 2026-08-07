@@ -11,7 +11,7 @@ The first release is internal-only. A merchant-facing web portal and mobile appl
 are planned; the API, database and authentication system are structured so those can be
 added without rebuilding the administrative application.
 
-**Production:** https://naipay.naitalk.com
+**Production:** https://everymerchant.naitalk.com
 
 ---
 
@@ -200,7 +200,7 @@ These are load-bearing. Financial correctness in this system depends on them.
 | [`docs/roles-and-permissions.md`](docs/roles-and-permissions.md) | The role and permission matrix |
 | [`docs/environment-variables.md`](docs/environment-variables.md) | Every environment variable |
 | [`docs/installation.md`](docs/installation.md) | Full local setup |
-| [`docs/deployment.md`](docs/deployment.md) | Deploying to `naipay.naitalk.com` |
+| [`docs/deployment.md`](docs/deployment.md) | Deploying to `everymerchant.naitalk.com` |
 
 Domain documentation — loan calculation, repayment allocation, ledger posting, the
 reversal process, and the role and permission matrix — is written alongside the phase
@@ -236,7 +236,7 @@ design system they depend on is built. Backend work runs ahead of the interface.
 | 16 | Administrative UI | ✅ Complete |
 | 17 | Security | Pending |
 | 18 | Testing | Pending |
-| 19 | Deployment | Pending |
+| 19 | Deployment | 🚧 In progress — live at production over HTTP; HTTPS pending |
 
 Not in the first release: merchant portal, mobile application, virtual accounts, payment
 gateways, direct bank APIs, public business directory, automated business connections,

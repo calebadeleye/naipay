@@ -131,7 +131,7 @@ jobs:
         run: npm run build
         env:
           # Build-time placeholders. The real values are injected at deploy.
-          NEXT_PUBLIC_API_URL: https://naipay.naitalk.com/api/v1
+          NEXT_PUBLIC_API_URL: https://everymerchant.naitalk.com/api/v1
           NEXT_PUBLIC_ENVIRONMENT: production
 
   security:

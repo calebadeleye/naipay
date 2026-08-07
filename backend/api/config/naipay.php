@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Support\Money\Currency;
 
 /**
- * Naipay domain configuration.
+ * Every Merchant domain configuration.
  *
  * Operational policy lives here rather than in code. The engineering brief is
  * explicit that repayment allocation order, approval limits and loan mechanics
@@ -25,13 +25,13 @@ return [
     */
 
     'brand' => [
-        'name' => 'Naipay',
-        'legal_name' => env('NAIPAY_LEGAL_NAME', 'Naipay Microfinance'),
+        'name' => 'Every Merchant',
+        'legal_name' => env('NAIPAY_LEGAL_NAME', 'Every Merchant Microfinance'),
         'tagline' => 'Merchant Microfinance',
         'support_email' => env('NAIPAY_SUPPORT_EMAIL', 'support@naitalk.com'),
         'support_phone' => env('NAIPAY_SUPPORT_PHONE'),
-        'website' => env('NAIPAY_WEBSITE', 'https://naipay.naitalk.com'),
-        'logo_path' => env('NAIPAY_LOGO_PATH', 'branding/naipay-logo.png'),
+        'website' => env('NAIPAY_WEBSITE', 'https://everymerchant.naitalk.com'),
+        'logo_path' => env('NAIPAY_LOGO_PATH', 'branding/every-merchant-logo.png'),
     ],
 
     /*

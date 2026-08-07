@@ -36,11 +36,11 @@ final class PasswordChangedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your Naipay password was changed')
+            ->subject('Your Every Merchant password was changed')
             ->greeting("Hello {$notifiable->first_name},")
-            ->line('The password for your Naipay account was changed just now.')
+            ->line('The password for your Every Merchant account was changed just now.')
             ->line('All other active sessions have been signed out.')
             ->line('If you did not make this change, contact your administrator immediately — your account may be compromised.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

@@ -41,7 +41,7 @@ final class ApiFoundationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.checks.database.status', 'up')
-            ->assertJsonPath('meta.application', 'Naipay')
+            ->assertJsonPath('meta.application', 'Every Merchant')
             ->assertJsonStructure([
                 'success',
                 'message',

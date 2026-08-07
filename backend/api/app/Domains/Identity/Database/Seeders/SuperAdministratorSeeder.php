@@ -50,7 +50,7 @@ final class SuperAdministratorSeeder extends Seeder
         $staff = DB::transaction(function () use ($email, $password): Staff {
             $staff = new Staff([
                 'staff_number' => app(ReferenceGenerator::class)->next('staff'),
-                'first_name' => (string) env('NAIPAY_INITIAL_ADMIN_FIRST_NAME', 'Naipay'),
+                'first_name' => (string) env('NAIPAY_INITIAL_ADMIN_FIRST_NAME', 'Every Merchant'),
                 'last_name' => (string) env('NAIPAY_INITIAL_ADMIN_LAST_NAME', 'Administrator'),
                 'email' => $email,
                 'job_title' => 'Super Administrator',

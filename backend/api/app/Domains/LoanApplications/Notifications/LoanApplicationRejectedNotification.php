@@ -37,6 +37,6 @@ final class LoanApplicationRejectedNotification extends Notification implements 
             ->line('We were unable to approve your loan application at this time.')
             ->line("Reason: {$this->reason}")
             ->line('Speak to your loan officer if you would like to discuss this further.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

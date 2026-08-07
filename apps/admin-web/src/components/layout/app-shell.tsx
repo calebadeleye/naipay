@@ -3,26 +3,88 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { LogOut, Menu, X } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 
 import { visibleNavSections } from '@/components/layout/nav-config';
+import type { NavSection } from '@/components/layout/nav-config';
 import { useCurrentStaff, useLogout } from '@/lib/auth/use-auth';
 import { cn } from '@/lib/cn';
 
+function NavContent({
+  navSections,
+  pathname,
+  onNavigate,
+}: {
+  navSections: NavSection[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
+      {navSections.map((section) => (
+        <div key={section.label}>
+          <p className="px-3 text-xs font-semibold tracking-wide text-brand-300 uppercase">
+            {section.label}
+          </p>
+
+          <ul className="mt-2 space-y-0.5">
+            {section.items.map((item) => {
+              const active = pathname === item.href;
+              const Icon = item.icon;
+
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={onNavigate}
+                    className={cn(
+                      'flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'border-accent-400 bg-white/15 text-white shadow-inner shadow-black/10'
+                        : 'border-transparent text-brand-100 hover:bg-white/10 hover:text-white',
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 /**
  * The frame every authenticated screen renders inside: a fixed sidebar for
- * navigation and a topbar identifying who is signed in.
+ * navigation and a topbar identifying who is signed in. Below the `lg`
+ * breakpoint the sidebar collapses into a hamburger-triggered drawer, since
+ * there is no other way to reach navigation on a phone-width screen.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: staff } = useCurrentStaff();
   const logout = useLogout();
   const pathname = usePathname();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Empty until `staff` loads, rather than briefly showing every section:
   // a screen a staff member can't reach shouldn't flash into view even for
   // one render.
   const navSections = visibleNavSections(staff?.permissions ?? []);
+
+  // Closes the drawer the moment the route changes — including navigation
+  // that didn't go through a nav link's own onClick, like the browser back
+  // button. Adjusting state during render (rather than in an effect) avoids
+  // a redundant extra render on every route change.
+  const [renderedPathname, setRenderedPathname] = useState(pathname);
+  if (pathname !== renderedPathname) {
+    setRenderedPathname(pathname);
+    setMobileNavOpen(false);
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -34,47 +96,52 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
-          {navSections.map((section) => (
-            <div key={section.label}>
-              <p className="px-3 text-xs font-semibold tracking-wide text-brand-300 uppercase">
-                {section.label}
-              </p>
-
-              <ul className="mt-2 space-y-0.5">
-                {section.items.map((item) => {
-                  const active = pathname === item.href;
-                  const Icon = item.icon;
-
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn(
-                          'flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors',
-                          active
-                            ? 'border-accent-400 bg-white/15 text-white shadow-inner shadow-black/10'
-                            : 'border-transparent text-brand-100 hover:bg-white/10 hover:text-white',
-                        )}
-                      >
-                        <Icon className="size-4 shrink-0" aria-hidden />
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
+        <NavContent navSections={navSections} pathname={pathname} />
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
-        <header className="glass-surface sticky top-0 z-10 flex h-16 items-center justify-between rounded-none border-x-0 border-t-0 px-6">
-          <div />
+      {mobileNavOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="absolute inset-0 bg-slate-950/60"
+            onClick={() => setMobileNavOpen(false)}
+          />
 
-          <div className="flex items-center gap-4">
+          <aside className="glass-surface-dark relative flex h-full w-64 max-w-[80vw] flex-col rounded-none shadow-xl">
+            <div className="flex h-16 items-center justify-between gap-2.5 border-b border-white/10 px-6">
+              <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileNavOpen(false)}>
+                <Image src="/every_logo_mark.png" alt="" width={28} height={28} className="shrink-0" priority />
+                <span className="text-lg font-semibold tracking-tight text-white">Every Merchant</span>
+              </Link>
+
+              <button
+                type="button"
+                aria-label="Close navigation"
+                onClick={() => setMobileNavOpen(false)}
+                className="rounded-md p-1.5 text-brand-100 hover:bg-white/10 hover:text-white"
+              >
+                <X className="size-5" aria-hidden />
+              </button>
+            </div>
+
+            <NavContent navSections={navSections} pathname={pathname} onNavigate={() => setMobileNavOpen(false)} />
+          </aside>
+        </div>
+      ) : null}
+
+      <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
+        <header className="glass-surface sticky top-0 z-10 flex h-16 items-center rounded-none border-x-0 border-t-0 px-6">
+          <button
+            type="button"
+            aria-label="Open navigation"
+            onClick={() => setMobileNavOpen(true)}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+          >
+            <Menu className="size-5" aria-hidden />
+          </button>
+
+          <div className="ml-auto flex items-center gap-4">
             {staff ? (
               <Link href="/account" className="text-right hover:opacity-80">
                 <p className="text-sm font-medium text-slate-900">{staff.full_name}</p>

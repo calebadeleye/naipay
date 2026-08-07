@@ -39,6 +39,6 @@ final class LoanDisbursedNotification extends Notification implements ShouldQueu
             ->line("Your loan of {$this->loan->principal_amount->format()} has been disbursed.")
             ->line("First repayment date: {$this->loan->first_repayment_date?->toFormattedDateString()}")
             ->line("Maturity date: {$this->loan->maturity_date?->toFormattedDateString()}")
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

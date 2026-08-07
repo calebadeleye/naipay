@@ -35,6 +35,6 @@ final class LoanApplicationApprovedNotification extends Notification implements 
             ->greeting("Hello {$notifiable->fullName()},")
             ->line("Your loan application has been approved for {$this->application->approved_amount?->format()}.")
             ->line('Your loan officer will be in touch to arrange disbursement.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

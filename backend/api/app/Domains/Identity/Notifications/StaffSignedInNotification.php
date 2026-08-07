@@ -48,13 +48,13 @@ final class StaffSignedInNotification extends Notification implements ShouldQueu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Naipay sign-in: {$this->signedInStaff->fullName()}")
+            ->subject("Every Merchant sign-in: {$this->signedInStaff->fullName()}")
             ->greeting("Hello {$notifiable->first_name},")
-            ->line("{$this->signedInStaff->fullName()} ({$this->signedInStaff->email}) just signed in to Naipay.")
+            ->line("{$this->signedInStaff->fullName()} ({$this->signedInStaff->email}) just signed in to Every Merchant.")
             ->line("Time: {$this->signedInAt->toDayDateTimeString()} UTC")
             ->line('IP address: '.($this->ipAddress ?? 'Unknown'))
             ->line("Device: {$this->device}")
             ->line('If this was not expected, review the account under Staff and consider disabling it.')
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }

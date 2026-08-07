@@ -37,7 +37,7 @@ final class TwoFactorTest extends TestCase
             ->assertJsonStructure(['data' => ['secret', 'otpauth_url', 'qr_code_svg']]);
 
         $this->assertStringContainsString('<svg', $response->json('data.qr_code_svg'));
-        $this->assertStringContainsString('Naipay', $response->json('data.otpauth_url'));
+        $this->assertStringContainsString('Every%20Merchant', $response->json('data.otpauth_url'));
 
         // Enrolling issues a secret but must NOT activate two-factor — an
         // operator who cannot produce a code from it would be locked out.

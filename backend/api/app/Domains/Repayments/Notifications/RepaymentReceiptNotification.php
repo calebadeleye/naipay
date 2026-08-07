@@ -41,6 +41,6 @@ final class RepaymentReceiptNotification extends Notification implements ShouldQ
             ->line("We have received your payment of {$this->repayment->amount->format()} on {$this->repayment->payment_date->toFormattedDateString()}.")
             ->line("Receipt number: {$this->receipt->receipt_number}")
             ->line("Reference: {$this->repayment->repayment_reference}")
-            ->salutation('Naipay');
+            ->salutation('Every Merchant');
     }
 }
