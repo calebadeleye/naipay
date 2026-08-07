@@ -85,7 +85,7 @@ export function InvestorAppShell({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
         <header className="glass-surface sticky top-0 z-10 flex h-16 items-center rounded-none border-x-0 border-t-0 px-6">
           <button
             type="button"
