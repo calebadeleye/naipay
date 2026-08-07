@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\LoanApplications\Services;
 
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -37,6 +38,7 @@ final class LoanApplicationService
         private readonly ReferenceGenerator $references,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
         private readonly LoanCreationService $loans,
     ) {}
 
@@ -226,6 +228,15 @@ final class LoanApplicationService
             $approved->loadMissing('merchant');
             $approved->merchant?->notify(new LoanApplicationApprovedNotification($approved));
 
+            $this->approvalNotifier->notifyDecision(
+                new LoanApplicationApproval($approved),
+                'approved',
+                $approved->application_number,
+                "/loan-applications/{$approved->id}",
+                $actor,
+                subject: $approved,
+            );
+
             return $approved;
         });
     }
@@ -249,6 +260,16 @@ final class LoanApplicationService
 
         $rejected->loadMissing('merchant');
         $rejected->merchant?->notify(new LoanApplicationRejectedNotification($rejected, $reason));
+
+        $this->approvalNotifier->notifyDecision(
+            new LoanApplicationApproval($rejected),
+            'rejected',
+            $rejected->application_number,
+            "/loan-applications/{$rejected->id}",
+            $actor,
+            subject: $rejected,
+            reason: $reason,
+        );
 
         return $rejected;
     }

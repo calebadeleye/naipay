@@ -8,6 +8,7 @@ import { useState, type ReactNode } from 'react';
 
 import { visibleNavSections } from '@/components/layout/nav-config';
 import type { NavSection } from '@/components/layout/nav-config';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import { useCurrentStaff, useLogout } from '@/lib/auth/use-auth';
 import { cn } from '@/lib/cn';
 
@@ -142,6 +143,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
 
           <div className="ml-auto flex items-center gap-4">
+            <NotificationBell />
+
             {staff ? (
               <Link href="/account" className="text-right hover:opacity-80">
                 <p className="text-sm font-medium text-slate-900">{staff.full_name}</p>

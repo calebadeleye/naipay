@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Loans\Services;
 
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -33,6 +34,7 @@ final class LoanService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
         private readonly LedgerPostingService $ledger,
     ) {}
 
@@ -56,6 +58,15 @@ final class LoanService
             ])->save();
 
             $this->audit->recordChange('loan.approved', self::MODULE, $loan, $before, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new LoanApproval($loan),
+                'approved',
+                $loan->loan_reference,
+                "/loans/{$loan->id}",
+                $actor,
+                subject: $loan,
+            );
 
             return $loan->fresh();
         });
@@ -110,6 +121,16 @@ final class LoanService
             ])->save();
 
             $this->audit->recordChange('loan.written_off', self::MODULE, $loan, $before, reason: $reason, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new LoanWriteOffApproval($loan),
+                'written off',
+                $loan->loan_reference,
+                "/loans/{$loan->id}",
+                $actor,
+                subject: $loan,
+                reason: $reason,
+            );
 
             return $loan->fresh();
         });

@@ -3,6 +3,7 @@ import type {
   ApiSuccess,
   ListQuery,
   PaginatedResult,
+  ResponseMeta,
 } from '@naipay/shared-types';
 
 import { ApiError, NetworkError } from './errors';
@@ -99,6 +100,18 @@ export class NaipayApiClient {
         has_more_pages: false,
       },
     };
+  }
+
+  /**
+   * Fetches an endpoint whose `meta` carries something beyond pagination
+   * (an unread count, a summary total) that the caller needs alongside
+   * `data` — `get()` alone discards `meta` entirely, and `list()` only
+   * lifts out `pagination`.
+   */
+  async getWithMeta<TData>(path: string, options?: RequestOptions): Promise<{ data: TData; meta: ResponseMeta }> {
+    const envelope = await this.requestEnvelope<TData>('GET', path, undefined, options);
+
+    return { data: envelope.data, meta: envelope.meta };
   }
 
   /** Downloads a generated receipt, statement or export as a Blob. */

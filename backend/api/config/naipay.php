@@ -104,13 +104,19 @@ return [
     */
 
     'allocation' => [
+        // 'instalment' settles each schedule entry completely (fee, then
+        // interest, then principal) before moving to the next one, oldest
+        // due date first — so a payment that covers more than one
+        // instalment reads as whole days paid, not a thin smear of interest
+        // across many future days. The older per-field buckets
+        // (overdue_interest, current_interest, overdue_principal,
+        // current_principal) remain available below for an operator who
+        // wants to revert to collecting all outstanding interest ahead of
+        // any principal.
         'default_order' => [
             'penalty',
             'fee',
-            'overdue_interest',
-            'current_interest',
-            'overdue_principal',
-            'current_principal',
+            'instalment',
         ],
 
         // Where money beyond the total outstanding is placed. `excess` holds it

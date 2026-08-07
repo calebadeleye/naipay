@@ -17,7 +17,14 @@ import { ReauthPrompt } from '@/components/auth/reauth-prompt';
 import { useBankAccountOptions } from '@/lib/bank-accounts/use-bank-accounts';
 import { formatAmountString, formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import { useProtectedAction } from '@/lib/auth/use-reauthenticate';
-import { useApproveLoan, useDisburseLoan, useLoan, useWriteOffLoan } from '@/lib/loans/use-loans';
+import {
+  useApproveLoan,
+  useDisburseLoan,
+  useDownloadLoanSchedulePdf,
+  useEmailLoanSchedule,
+  useLoan,
+  useWriteOffLoan,
+} from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
 
 const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -25,6 +32,13 @@ const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info
   pending_disbursement: 'info',
   disbursed: 'success',
   written_off: 'danger',
+};
+
+const scheduleStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+  paid: 'success',
+  partially_paid: 'warning',
+  pending: 'neutral',
+  overdue: 'danger',
 };
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -164,6 +178,50 @@ function WriteOffAction({ loanId }: { loanId: number }) {
   );
 }
 
+function ScheduleActions({
+  loanId,
+  loanReference,
+  merchantEmail,
+}: {
+  loanId: number;
+  loanReference: string;
+  merchantEmail: string | null | undefined;
+}) {
+  const downloadPdf = useDownloadLoanSchedulePdf(loanId, loanReference);
+  const emailSchedule = useEmailLoanSchedule(loanId);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
+      <Button
+        type="button"
+        variant="secondary"
+        loading={downloadPdf.isPending}
+        onClick={() => downloadPdf.mutate()}
+      >
+        Download PDF
+      </Button>
+
+      <Button
+        type="button"
+        variant="secondary"
+        loading={emailSchedule.isPending}
+        disabled={!merchantEmail}
+        title={merchantEmail ? undefined : 'This merchant has no email address on file.'}
+        onClick={() => emailSchedule.mutate()}
+      >
+        Email to client
+      </Button>
+
+      {downloadPdf.isError ? (
+        <Alert tone="error">Could not download the schedule. Please try again.</Alert>
+      ) : null}
+
+      {emailSchedule.isSuccess ? <Alert tone="success">Schedule emailed to {merchantEmail}.</Alert> : null}
+      {emailSchedule.isError ? <Alert tone="error">Could not email the schedule. Please try again.</Alert> : null}
+    </div>
+  );
+}
+
 export default function LoanDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -292,6 +350,7 @@ export default function LoanDetailPage() {
           {loan.schedule.length > 0 ? (
             <Card className="overflow-x-auto p-0">
               <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900">Repayment schedule</h2>
+              <ScheduleActions loanId={loan.id} loanReference={loan.loan_reference} merchantEmail={loan.merchant?.email} />
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
@@ -318,7 +377,7 @@ export default function LoanDetailPage() {
                         {formatAmountString(entry.total_due)}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge tone="neutral">{entry.status_label}</Badge>
+                        <Badge tone={scheduleStatusTone[entry.status] ?? 'neutral'}>{entry.status_label}</Badge>
                       </td>
                     </tr>
                   ))}

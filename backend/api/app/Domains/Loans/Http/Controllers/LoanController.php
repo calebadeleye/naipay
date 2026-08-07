@@ -10,14 +10,18 @@ use App\Domains\Loans\Http\Requests\DisburseLoanRequest;
 use App\Domains\Loans\Http\Requests\WriteOffLoanRequest;
 use App\Domains\Loans\Http\Resources\LoanResource;
 use App\Domains\Loans\Models\Loan;
+use App\Domains\Loans\Notifications\LoanScheduleNotification;
 use App\Domains\Loans\Services\LoanDisbursementService;
+use App\Domains\Loans\Services\LoanScheduleExportService;
 use App\Domains\Loans\Services\LoanService;
+use App\Support\Exceptions\DomainException;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\FilterType;
 use App\Support\Query\QueryPipeline;
 use App\Support\Query\QuerySpecification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 
 final class LoanController
@@ -27,6 +31,7 @@ final class LoanController
     public function __construct(
         private readonly LoanService $loans,
         private readonly LoanDisbursementService $disbursements,
+        private readonly LoanScheduleExportService $scheduleExport,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -123,6 +128,40 @@ final class LoanController
         return ApiResponse::success(
             new LoanResource($updated->load(self::RELATIONS)),
             "{$updated->loan_reference} has been written off.",
+        );
+    }
+
+    /**
+     * Streams the repayment schedule as a PDF for download.
+     */
+    public function schedulePdf(Loan $loan): Response
+    {
+        $pdf = $this->scheduleExport->render($loan);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$this->scheduleExport->filename($loan).'"',
+        ]);
+    }
+
+    /**
+     * Emails the repayment schedule PDF to the merchant on file.
+     */
+    public function emailSchedule(Loan $loan): JsonResponse
+    {
+        $loan->loadMissing('merchant');
+
+        if ($loan->merchant === null || $loan->merchant->email === null) {
+            throw new DomainException('This merchant has no email address on file.');
+        }
+
+        $pdf = $this->scheduleExport->render($loan);
+
+        $loan->merchant->notify(new LoanScheduleNotification($loan, $pdf, $this->scheduleExport->filename($loan)));
+
+        return ApiResponse::success(
+            null,
+            "The repayment schedule has been emailed to {$loan->merchant->email}.",
         );
     }
 }

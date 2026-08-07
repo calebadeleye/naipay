@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Merchants\Services;
 
 use App\Domains\Accounts\Services\MerchantAccountService;
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -39,6 +40,7 @@ final class MerchantOnboardingService
         private readonly ReferenceGenerator $references,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
         private readonly MerchantAccountService $accounts,
     ) {}
 
@@ -227,6 +229,15 @@ final class MerchantOnboardingService
             $approved = $approved->fresh();
             $approved->notify(new MerchantApprovedNotification($approved));
 
+            $this->approvalNotifier->notifyDecision(
+                new MerchantApproval($approved),
+                'approved',
+                $approved->merchant_number,
+                "/merchants/{$approved->id}",
+                $actor,
+                subject: $approved,
+            );
+
             return $approved;
         });
     }
@@ -235,7 +246,7 @@ final class MerchantOnboardingService
     {
         $this->assertTransition($merchant, OnboardingStatus::Rejected);
 
-        return $this->transition(
+        $rejected = $this->transition(
             $merchant,
             OnboardingStatus::Rejected,
             'merchant.rejected',
@@ -243,6 +254,18 @@ final class MerchantOnboardingService
             reason: $reason,
             extra: ['rejection_reason' => $reason],
         );
+
+        $this->approvalNotifier->notifyDecision(
+            new MerchantApproval($rejected),
+            'rejected',
+            $rejected->merchant_number,
+            "/merchants/{$rejected->id}",
+            $actor,
+            subject: $rejected,
+            reason: $reason,
+        );
+
+        return $rejected;
     }
 
     public function suspend(Merchant $merchant, string $reason, Staff $actor): Merchant

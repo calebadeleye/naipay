@@ -62,3 +62,30 @@ export function useWriteOffLoan(id: number | string) {
     },
   });
 }
+
+/**
+ * Downloads the repayment schedule PDF and hands it straight to the
+ * browser's save flow — the API client's `download()` already attaches the
+ * bearer token a plain `<a href>` couldn't.
+ */
+export function useDownloadLoanSchedulePdf(id: number | string, loanReference: string) {
+  return useMutation({
+    mutationFn: () => api.download(`/admin/loans/${id}/schedule/pdf`),
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${loanReference}-schedule.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    },
+  });
+}
+
+export function useEmailLoanSchedule(id: number | string) {
+  return useMutation({
+    mutationFn: () => api.post<null>(`/admin/loans/${id}/schedule/email`),
+  });
+}

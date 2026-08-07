@@ -8,6 +8,7 @@ use App\Domains\Accounts\Approvals\BankAccountApproval;
 use App\Domains\Accounts\Enums\BankAccountPurpose;
 use App\Domains\Accounts\Enums\BankAccountStatus;
 use App\Domains\Accounts\Models\BankAccount;
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -28,6 +29,7 @@ final class BankAccountService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
     ) {}
 
     /**
@@ -110,6 +112,15 @@ final class BankAccountService
             ])->save();
 
             $this->audit->recordChange('bank_account.approved', self::MODULE, $account, $before, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new BankAccountApproval($account),
+                'approved',
+                $account->label(),
+                "/bank-accounts/{$account->id}",
+                $actor,
+                subject: $account,
+            );
 
             return $account->fresh();
         });

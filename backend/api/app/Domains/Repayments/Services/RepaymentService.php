@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Repayments\Services;
 
 use App\Domains\Accounts\Models\MerchantAccount;
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -48,6 +49,7 @@ final class RepaymentService
         private readonly ReferenceGenerator $references,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
         private readonly RepaymentAllocationService $allocator,
         private readonly LedgerPostingService $ledger,
         private readonly ReceiptService $receipts,
@@ -131,6 +133,16 @@ final class RepaymentService
 
             $this->audit->recordChange('repayment.rejected', self::MODULE, $repayment, $before, reason: $reason, actor: $actor);
 
+            $this->approvalNotifier->notifyDecision(
+                new RepaymentApproval($repayment),
+                'rejected',
+                $repayment->repayment_reference,
+                "/repayments/{$repayment->id}",
+                $actor,
+                subject: $repayment,
+                reason: $reason,
+            );
+
             return $repayment->fresh();
         });
     }
@@ -196,6 +208,15 @@ final class RepaymentService
             ])->save();
 
             $this->audit->recordChange('repayment.approved', self::MODULE, $repayment, $before, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new RepaymentApproval($repayment),
+                'approved',
+                $repayment->repayment_reference,
+                "/repayments/{$repayment->id}",
+                $actor,
+                subject: $repayment,
+            );
 
             $repayment = $repayment->fresh('allocations');
 
@@ -268,6 +289,16 @@ final class RepaymentService
             ])->save();
 
             $this->audit->recordChange('repayment.reversed', self::MODULE, $repayment, $before, reason: $reason, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new RepaymentReversalApproval($repayment),
+                'reversed',
+                $repayment->repayment_reference,
+                "/repayments/{$repayment->id}",
+                $actor,
+                subject: $repayment,
+                reason: $reason,
+            );
 
             return $repayment->fresh();
         });

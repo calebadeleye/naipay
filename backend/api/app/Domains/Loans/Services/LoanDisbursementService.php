@@ -6,6 +6,7 @@ namespace App\Domains\Loans\Services;
 
 use App\Domains\Accounts\Enums\BankAccountPurpose;
 use App\Domains\Accounts\Models\BankAccount;
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -48,6 +49,7 @@ final class LoanDisbursementService
         private readonly LedgerPostingService $ledger,
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
     ) {}
 
     public function disburse(Loan $loan, BankAccount $bankAccount, Staff $actor, ?Carbon $disbursementDate = null): Loan
@@ -140,6 +142,15 @@ final class LoanDisbursementService
             ])->save();
 
             $this->audit->recordChange('loan.disbursed', self::MODULE, $loan, $before, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new LoanDisbursementApproval($loan),
+                'disbursed',
+                $loan->loan_reference,
+                "/loans/{$loan->id}",
+                $actor,
+                subject: $loan,
+            );
 
             $loan = $loan->fresh(['scheduleEntries', 'merchant']);
             $loan->merchant?->notify(new LoanDisbursedNotification($loan));

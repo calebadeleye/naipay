@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Reconciliation\Services;
 
+use App\Domains\Approvals\Services\ApprovalNotifier;
 use App\Domains\Approvals\Services\MakerCheckerGuard;
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Identity\Models\Staff;
@@ -42,6 +43,7 @@ final class ReconciliationService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly MakerCheckerGuard $makerChecker,
+        private readonly ApprovalNotifier $approvalNotifier,
     ) {}
 
     /**
@@ -230,6 +232,15 @@ final class ReconciliationService
             ])->save();
 
             $this->audit->recordChange('reconciliation.approved', self::MODULE, $reconciliation, $before, actor: $actor);
+
+            $this->approvalNotifier->notifyDecision(
+                new BankReconciliationApproval($reconciliation),
+                'approved',
+                "Reconciliation #{$reconciliation->id}",
+                "/reconciliation/{$reconciliation->id}",
+                $actor,
+                subject: $reconciliation,
+            );
 
             return $reconciliation->fresh();
         });

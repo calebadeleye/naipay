@@ -212,7 +212,7 @@ final class RepaymentTest extends TestCase
     // --- Approval and allocation ----------------------------------------------------
 
     #[Test]
-    public function approving_allocates_overdue_instalments_before_current_ones_and_posts_a_balanced_entry(): void
+    public function approving_settles_each_instalment_completely_oldest_due_date_first(): void
     {
         $loan = $this->loanWithThreeInstalments();
         $verifier = Staff::factory()->create();
@@ -231,33 +231,34 @@ final class RepaymentTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(RepaymentStatus::Approved->value, $response->json('data.status'));
-        $this->assertSame('9000.00', $response->json('data.allocation.principal.amount'));
-        $this->assertSame('6000.00', $response->json('data.allocation.interest.amount'));
+        $this->assertSame('11000.00', $response->json('data.allocation.principal.amount'));
+        $this->assertSame('4000.00', $response->json('data.allocation.interest.amount'));
         $this->assertSame('0.00', $response->json('data.allocation.excess.amount'));
 
         $entries = $loan->scheduleEntries()->orderBy('installment_number')->get();
 
-        // Entry 1: fully cleared interest (2000) and 9000 of its 10000
-        // principal — the repayment ran out here.
-        $this->assertSame('9000.00', $entries[0]->principal_paid->toDecimalString());
+        // Entry 1 (oldest overdue): fully cleared — interest (2000) and all
+        // 10000 of its principal — before entry 2 receives anything.
+        $this->assertSame('10000.00', $entries[0]->principal_paid->toDecimalString());
         $this->assertSame('2000.00', $entries[0]->interest_paid->toDecimalString());
-        $this->assertSame(LoanScheduleEntryStatus::PartiallyPaid, $entries[0]->fresh()->status);
+        $this->assertSame(LoanScheduleEntryStatus::Paid, $entries[0]->fresh()->status);
 
-        // Entry 2 (also overdue): its interest was cleared before entry 3's,
-        // per the default order's overdue_interest-before-current_interest
-        // rule, but no principal was left for it.
-        $this->assertSame('0.00', $entries[1]->principal_paid->toDecimalString());
+        // Entry 2 (also overdue): its interest is cleared in full, but only
+        // 1000 of its 10000 principal is left once entry 1 is settled — the
+        // repayment ran out here.
+        $this->assertSame('1000.00', $entries[1]->principal_paid->toDecimalString());
         $this->assertSame('2000.00', $entries[1]->interest_paid->toDecimalString());
+        $this->assertSame(LoanScheduleEntryStatus::PartiallyPaid, $entries[1]->fresh()->status);
 
-        // Entry 3 (current, not overdue): its interest was still cleared
-        // ahead of entry 1 and 2's principal, per current_interest coming
-        // before overdue_principal in the order.
+        // Entry 3 (current, not overdue): untouched — nothing was left once
+        // entries 1 and 2 were addressed in due-date order.
         $this->assertSame('0.00', $entries[2]->principal_paid->toDecimalString());
-        $this->assertSame('2000.00', $entries[2]->interest_paid->toDecimalString());
+        $this->assertSame('0.00', $entries[2]->interest_paid->toDecimalString());
+        $this->assertSame(LoanScheduleEntryStatus::Pending, $entries[2]->fresh()->status);
 
         $loan->refresh();
-        $this->assertSame('21000.00', $loan->outstanding_principal->toDecimalString());
-        $this->assertSame('0.00', $loan->outstanding_interest->toDecimalString());
+        $this->assertSame('19000.00', $loan->outstanding_principal->toDecimalString());
+        $this->assertSame('2000.00', $loan->outstanding_interest->toDecimalString());
 
         $transaction = JournalTransaction::query()->findOrFail($repayment->fresh()->repayment_journal_transaction_id);
         $lines = $transaction->entries()->get();
@@ -270,8 +271,99 @@ final class RepaymentTest extends TestCase
         $principalLine = $lines->firstWhere('ledger_account_id', $receivableAccount->id);
         $interestLine = $lines->firstWhere('ledger_account_id', $incomeAccount->id);
 
-        $this->assertSame('9000.00', $principalLine->credit_amount->toDecimalString());
-        $this->assertSame('6000.00', $interestLine->credit_amount->toDecimalString());
+        $this->assertSame('11000.00', $principalLine->credit_amount->toDecimalString());
+        $this->assertSame('4000.00', $interestLine->credit_amount->toDecimalString());
+    }
+
+    #[Test]
+    public function an_overpayment_covering_multiple_future_instalments_marks_those_future_days_paid(): void
+    {
+        // A flat daily schedule: 6000/day due, split 5800 principal / 200
+        // interest, three future days, none overdue yet.
+        $loan = Loan::factory()->disbursed()->create([
+            'principal_amount' => '17400.00',
+            'outstanding_principal' => '17400.00',
+            'outstanding_interest' => '600.00',
+            'outstanding_fees' => '0.00',
+        ]);
+
+        foreach ([1, 2, 3] as $number) {
+            LoanScheduleEntry::factory()->create([
+                'loan_id' => $loan->id,
+                'installment_number' => $number,
+                'due_date' => now()->addDays($number)->toDateString(),
+                'opening_principal' => '17400.00',
+                'principal_due' => '5800.00',
+                'interest_due' => '200.00',
+                'fee_due' => '0.00',
+            ]);
+        }
+
+        $verifier = Staff::factory()->create();
+
+        // Exactly two days' worth, paid ahead of either day being due.
+        $repayment = Repayment::factory()->create([
+            'loan_id' => $loan->id,
+            'amount' => '12000.00',
+            'payment_date' => now()->toDateString(),
+            'verified_by' => $verifier->id,
+            'status' => RepaymentStatus::Verified,
+        ]);
+
+        $this->actingAsRole(Role::FinanceManager);
+
+        $this->postJson("/api/v1/admin/repayments/{$repayment->id}/approve")->assertOk();
+
+        $entries = $loan->scheduleEntries()->orderBy('installment_number')->get();
+
+        $this->assertSame(LoanScheduleEntryStatus::Paid, $entries[0]->fresh()->status);
+        $this->assertSame(LoanScheduleEntryStatus::Paid, $entries[1]->fresh()->status);
+        $this->assertSame(LoanScheduleEntryStatus::Pending, $entries[2]->fresh()->status);
+    }
+
+    #[Test]
+    public function an_overpayment_between_one_and_two_days_pays_one_day_fully_and_the_next_partially(): void
+    {
+        $loan = Loan::factory()->disbursed()->create([
+            'principal_amount' => '17400.00',
+            'outstanding_principal' => '17400.00',
+            'outstanding_interest' => '600.00',
+            'outstanding_fees' => '0.00',
+        ]);
+
+        foreach ([1, 2, 3] as $number) {
+            LoanScheduleEntry::factory()->create([
+                'loan_id' => $loan->id,
+                'installment_number' => $number,
+                'due_date' => now()->addDays($number)->toDateString(),
+                'opening_principal' => '17400.00',
+                'principal_due' => '5800.00',
+                'interest_due' => '200.00',
+                'fee_due' => '0.00',
+            ]);
+        }
+
+        $verifier = Staff::factory()->create();
+
+        // Between one day (6000) and two days (12000).
+        $repayment = Repayment::factory()->create([
+            'loan_id' => $loan->id,
+            'amount' => '11500.00',
+            'payment_date' => now()->toDateString(),
+            'verified_by' => $verifier->id,
+            'status' => RepaymentStatus::Verified,
+        ]);
+
+        $this->actingAsRole(Role::FinanceManager);
+
+        $this->postJson("/api/v1/admin/repayments/{$repayment->id}/approve")->assertOk();
+
+        $entries = $loan->scheduleEntries()->orderBy('installment_number')->get();
+
+        $this->assertSame(LoanScheduleEntryStatus::Paid, $entries[0]->fresh()->status);
+        $this->assertSame(LoanScheduleEntryStatus::PartiallyPaid, $entries[1]->fresh()->status);
+        $this->assertSame('5500.00', $entries[1]->fresh()->principal_paid->plus($entries[1]->fresh()->interest_paid)->toDecimalString());
+        $this->assertSame(LoanScheduleEntryStatus::Pending, $entries[2]->fresh()->status);
     }
 
     #[Test]

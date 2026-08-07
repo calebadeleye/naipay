@@ -33,6 +33,16 @@ Route::middleware(['auth:staff', 'session.expiry', 'security.steps'])
             ->whereNumber('loan')
             ->name('show');
 
+        Route::get('{loan}/schedule/pdf', [LoanController::class, 'schedulePdf'])
+            ->middleware('permission:'.Permission::LoansView->value)
+            ->whereNumber('loan')
+            ->name('schedule.pdf');
+
+        Route::post('{loan}/schedule/email', [LoanController::class, 'emailSchedule'])
+            ->middleware('permission:'.Permission::LoansView->value)
+            ->whereNumber('loan')
+            ->name('schedule.email');
+
         Route::post('{loan}/approve', [LoanController::class, 'approve'])
             ->middleware('permission:'.Permission::LoansApprove->value)
             ->whereNumber('loan')

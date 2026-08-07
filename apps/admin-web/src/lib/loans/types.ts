@@ -70,7 +70,7 @@ export interface Loan {
     written_off_at: string;
   } | null;
 
-  merchant: { id: number; merchant_number: string; full_name: string } | null;
+  merchant: { id: number; merchant_number: string; full_name: string; email: string | null } | null;
   business: { id: number; business_number: string; business_name: string } | null;
   loan_product: { id: number; code: string; name: string } | null;
   loan_application_id: number | null;
