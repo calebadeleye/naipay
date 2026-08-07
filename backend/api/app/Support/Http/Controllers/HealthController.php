@@ -43,7 +43,7 @@ final class HealthController
                 'status' => $allUp ? 'healthy' : ($databaseUp ? 'degraded' : 'unhealthy'),
                 'checks' => $checks,
             ],
-            message: 'Naipay API health check.',
+            message: 'Every Merchant API health check.',
             meta: [
                 'application' => config('naipay.brand.name'),
                 'environment' => config('app.env'),

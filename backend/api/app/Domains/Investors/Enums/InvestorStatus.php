@@ -45,7 +45,7 @@ enum InvestorStatus: string
     {
         return match ($this) {
             self::Active => null,
-            self::Suspended => 'This account is suspended. Contact Naipay to regain access.',
+            self::Suspended => 'This account is suspended. Contact Every Merchant to regain access.',
             self::Disabled => 'This account is no longer active.',
         };
     }

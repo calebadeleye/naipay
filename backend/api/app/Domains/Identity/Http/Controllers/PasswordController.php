@@ -49,7 +49,7 @@ final class PasswordController
         $this->passwords->sendResetLink($request->string('email')->toString());
 
         return ApiResponse::success(
-            message: 'If that email address matches a Naipay account, a reset link has been sent to it.',
+            message: 'If that email address matches an Every Merchant account, a reset link has been sent to it.',
         );
     }
 
