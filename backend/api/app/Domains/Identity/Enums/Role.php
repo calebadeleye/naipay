@@ -31,6 +31,7 @@ enum Role: string
     case CustomerSupport = 'customer-support';
     case Auditor = 'auditor';
     case ReadOnlyUser = 'read-only-user';
+    case InvestorManager = 'investor-manager';
 
     public function label(): string
     {
@@ -50,6 +51,7 @@ enum Role: string
             self::CustomerSupport => 'Customer Support',
             self::Auditor => 'Auditor',
             self::ReadOnlyUser => 'Read-only User',
+            self::InvestorManager => 'Investor Manager',
         };
     }
 
@@ -71,6 +73,7 @@ enum Role: string
             self::CustomerSupport => 'Read access to merchant and loan records to answer enquiries.',
             self::Auditor => 'Read-only access across the system, including the audit trail.',
             self::ReadOnlyUser => 'Minimal read-only access.',
+            self::InvestorManager => 'Adds and manages investor accounts and their access.',
         };
     }
 

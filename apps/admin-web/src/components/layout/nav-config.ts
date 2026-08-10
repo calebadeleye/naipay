@@ -19,6 +19,7 @@ import {
   History,
   Building2,
   UserCog,
+  PiggyBank,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -83,6 +84,10 @@ export const navSections: NavSection[] = [
       { label: 'Ledger', href: '/ledger', icon: BookOpen, permission: 'ledger.view' },
       { label: 'Reconciliation', href: '/reconciliation', icon: ListChecks, permission: 'reconciliation.view' },
     ],
+  },
+  {
+    label: 'Investors',
+    items: [{ label: 'Investors', href: '/investors', icon: PiggyBank, permission: 'investors.view' }],
   },
   {
     label: 'Reports',

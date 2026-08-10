@@ -78,6 +78,15 @@ final class InvestorAuthenticationService
         $investor->tokens()->delete();
     }
 
+    /**
+     * Cuts every live session, not just the current one — used when an
+     * administrator suspends or otherwise changes an investor's access.
+     */
+    public function signOutAllSessions(Investor $investor): void
+    {
+        $investor->tokens()->delete();
+    }
+
     private function issueToken(Investor $investor, RequestContext $context): string
     {
         $lifetimeMinutes = (int) config('naipay.security.token_lifetime_minutes', 480);

@@ -78,6 +78,7 @@ final class RolePermissionMatrix
                 Permission::ReportsFinancial,
                 Permission::AuditView,
                 Permission::SettingsView,
+                Permission::InvestorsView,
             ],
 
             Role::OperationsManager => [
@@ -372,6 +373,7 @@ final class RolePermissionMatrix
                 Permission::AuditView,
                 Permission::AuditExport,
                 Permission::SettingsView,
+                Permission::InvestorsView,
             ],
 
             Role::ReadOnlyUser => [
@@ -381,6 +383,16 @@ final class RolePermissionMatrix
                 Permission::LoansView,
                 Permission::RepaymentsView,
                 Permission::ReportsView,
+            ],
+
+            // Adds and manages investor accounts. Narrow by design: this role
+            // touches nothing else in the system.
+            Role::InvestorManager => [
+                Permission::DashboardView,
+                Permission::InvestorsView,
+                Permission::InvestorsCreate,
+                Permission::InvestorsUpdate,
+                Permission::InvestorsSuspend,
             ],
         };
     }

@@ -73,7 +73,7 @@ export interface RoleOption {
 }
 
 /**
- * The 14 roles assignable through staff management — App\Domains\Identity\Enums\Role,
+ * The 15 roles assignable through staff management — App\Domains\Identity\Enums\Role,
  * minus Super Administrator. There can only ever be one Super Administrator, seeded
  * once at install time, and neither the console nor the API allows granting it to
  * anyone else — so it's never offered here. See
@@ -94,4 +94,5 @@ export const ROLE_OPTIONS: RoleOption[] = [
   { value: 'customer-support', label: 'Customer Support', description: 'Read access to merchant and loan records to answer enquiries.' },
   { value: 'auditor', label: 'Auditor', description: 'Read-only access across the system, including the audit trail.' },
   { value: 'read-only-user', label: 'Read-only User', description: 'Minimal read-only access.' },
+  { value: 'investor-manager', label: 'Investor Manager', description: 'Adds and manages investor accounts and their access.' },
 ];

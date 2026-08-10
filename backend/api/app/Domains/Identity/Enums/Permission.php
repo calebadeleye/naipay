@@ -118,6 +118,12 @@ enum Permission: string
     case BranchesView = 'branches.view';
     case BranchesManage = 'branches.manage';
 
+    // --- Investors -----------------------------------------------------------
+    case InvestorsView = 'investors.view';
+    case InvestorsCreate = 'investors.create';
+    case InvestorsUpdate = 'investors.update';
+    case InvestorsSuspend = 'investors.suspend';
+
     // --- Staff and access control ------------------------------------------
     case StaffView = 'staff.view';
     case StaffCreate = 'staff.create';

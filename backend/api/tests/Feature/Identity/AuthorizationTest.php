@@ -45,7 +45,7 @@ final class AuthorizationTest extends TestCase
             ]);
         }
 
-        $this->assertSame(15, RoleModel::query()->count());
+        $this->assertSame(16, RoleModel::query()->count());
     }
 
     #[Test]

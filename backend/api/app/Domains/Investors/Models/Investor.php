@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Investors\Models;
 
+use App\Domains\Identity\Models\Staff;
 use App\Domains\Investors\Enums\InvestorStatus;
+use Database\Factories\InvestorFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,6 +26,9 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $email
  * @property string|null $phone
  * @property InvestorStatus $status
+ * @property string|null $suspension_reason
+ * @property Carbon|null $suspended_at
+ * @property int|null $suspended_by
  * @property int $failed_login_attempts
  * @property Carbon|null $locked_until
  * @property Carbon|null $last_login_at
@@ -29,7 +36,8 @@ use Laravel\Sanctum\HasApiTokens;
  */
 class Investor extends Authenticatable
 {
-    use HasApiTokens, Notifiable, SoftDeletes;
+    /** @use HasFactory<InvestorFactory> */
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $table = 'investors';
 
@@ -84,6 +92,16 @@ class Investor extends Authenticatable
         return self::query()->where('email', mb_strtolower(trim($email)))->first();
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'created_by');
+    }
+
+    public function suspendedBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'suspended_by');
+    }
+
     /**
      * @return array<string, string>
      */
@@ -94,6 +112,7 @@ class Investor extends Authenticatable
             'password' => 'hashed',
             'failed_login_attempts' => 'integer',
             'locked_until' => 'datetime',
+            'suspended_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
     }
