@@ -134,18 +134,18 @@ final class MerchantOnboardingTest extends TestCase
     }
 
     #[Test]
-    public function the_creating_officer_cannot_approve_their_own_merchant(): void
+    public function the_creating_officer_can_now_approve_their_own_merchant(): void
     {
         $officer = $this->actingAsRole(Role::OperationsManager, ['access_scope' => 'global']);
 
         $merchant = $this->merchantReadyFor(OnboardingStatus::PendingApproval, createdBy: $officer->id);
 
-        // Segregation of duties: the person who onboarded a merchant must not
-        // be the one who admits them to the book.
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $this->postJson("/api/v1/admin/merchants/{$merchant->id}/approve")
-            ->assertForbidden();
+            ->assertOk();
 
-        $this->assertSame(OnboardingStatus::PendingApproval, $merchant->fresh()->onboarding_status);
+        $this->assertSame(OnboardingStatus::Approved, $merchant->fresh()->onboarding_status);
     }
 
     #[Test]

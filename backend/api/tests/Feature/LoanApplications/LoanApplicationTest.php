@@ -196,18 +196,18 @@ final class LoanApplicationTest extends TestCase
     }
 
     #[Test]
-    public function the_creating_officer_cannot_approve_their_own_application(): void
+    public function the_creating_officer_can_now_approve_their_own_application(): void
     {
         $approver = $this->actingAsRole(Role::CreditManager, ['access_scope' => 'global']);
 
         $application = $this->applicationReadyFor(LoanApplicationStatus::Recommended, createdBy: $approver->id);
 
-        // Segregation of duties: the person who originated the application
-        // must not be the one who admits it.
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $this->postJson("/api/v1/admin/loan-applications/{$application->id}/approve")
-            ->assertForbidden();
+            ->assertOk();
 
-        $this->assertSame(LoanApplicationStatus::Recommended, $application->fresh()->status);
+        $this->assertSame(LoanApplicationStatus::Approved, $application->fresh()->status);
     }
 
     #[Test]

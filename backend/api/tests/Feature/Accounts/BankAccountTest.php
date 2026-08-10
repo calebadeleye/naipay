@@ -140,18 +140,20 @@ final class BankAccountTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_created_an_account_cannot_approve_it(): void
+    public function the_officer_who_created_an_account_can_now_approve_it(): void
     {
         $maker = $this->actingAsRole(Role::FinanceManager);
 
         $account = BankAccount::factory()->create(['created_by' => $maker->id]);
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/bank-accounts/{$account->id}/approve");
 
-        $response->assertForbidden();
+        $response->assertOk();
 
         $account->refresh();
-        $this->assertNull($account->approved_by);
+        $this->assertSame($maker->id, $account->approved_by);
     }
 
     #[Test]

@@ -49,21 +49,23 @@ final class MakerCheckerGuardTest extends TestCase
     }
 
     #[Test]
-    public function a_staff_member_cannot_approve_an_operation_they_created(): void
+    public function a_staff_member_can_now_approve_an_operation_they_created(): void
     {
+        // The business decided self-approval should no longer be blocked —
+        // naipay.maker_checker.enforced_operations is empty by default. See
+        // config/naipay.php and docs/roles-and-permissions.md.
         $staff = Staff::factory()->create();
 
         $operation = new PendingOperation((int) $staff->getKey(), 'repayment.approve');
 
-        $this->assertFalse($this->guard->canApprove($staff, $operation));
+        $this->assertTrue($this->guard->canApprove($staff, $operation));
 
-        $this->expectException(MakerCheckerViolationException::class);
-
+        // Does not throw.
         $this->guard->assertCanApprove($staff, $operation);
     }
 
     #[Test]
-    public function a_different_staff_member_may_approve(): void
+    public function a_different_staff_member_may_also_approve(): void
     {
         $maker = Staff::factory()->create();
         $checker = Staff::factory()->create();
@@ -77,23 +79,13 @@ final class MakerCheckerGuardTest extends TestCase
     }
 
     #[Test]
-    public function the_violation_is_reported_as_forbidden_with_an_actionable_message(): void
-    {
-        $staff = Staff::factory()->create();
-        $operation = new PendingOperation((int) $staff->getKey(), 'loan.disburse');
-
-        try {
-            $this->guard->assertCanApprove($staff, $operation);
-            $this->fail('Expected a maker-checker violation.');
-        } catch (MakerCheckerViolationException $e) {
-            $this->assertSame(403, $e->status());
-            $this->assertStringContainsString('different authorised officer', $e->getMessage());
-        }
-    }
-
-    #[Test]
     public function a_system_generated_record_may_be_approved_by_anyone_authorised(): void
     {
+        // Explicitly enforce this operation for the test, so the assertion
+        // exercises the null-maker branch rather than the (now default)
+        // nothing-is-enforced branch.
+        config(['naipay.maker_checker.enforced_operations' => ['repayment.approve']]);
+
         $staff = Staff::factory()->create();
 
         // No maker to conflict with — e.g. an operation raised by the
@@ -115,26 +107,26 @@ final class MakerCheckerGuardTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('enforcedOperations')]
-    public function the_control_covers_every_sensitive_operation_the_brief_names(string $operation): void
+    #[DataProvider('previouslyEnforcedOperations')]
+    public function operations_the_brief_once_named_now_allow_self_approval_by_default(string $operation): void
     {
-        $this->assertTrue(
+        $this->assertFalse(
             $this->guard->isEnforcedFor($operation),
-            "[{$operation}] must be subject to maker-checker."
+            "[{$operation}] should not be enforced by default."
         );
 
         $staff = Staff::factory()->create();
 
-        $this->assertFalse(
+        $this->assertTrue(
             $this->guard->canApprove($staff, new PendingOperation((int) $staff->getKey(), $operation)),
-            "[{$operation}] must refuse self-approval."
+            "[{$operation}] should now allow self-approval."
         );
     }
 
     /**
      * @return array<string, array{string}>
      */
-    public static function enforcedOperations(): array
+    public static function previouslyEnforcedOperations(): array
     {
         return [
             'loan approval' => ['loan.approve'],
@@ -148,8 +140,6 @@ final class MakerCheckerGuardTest extends TestCase
             'write-off' => ['loan.write_off'],
             'account closure' => ['account.close'],
             'sensitive merchant change' => ['merchant.sensitive_update'],
-            'staff role change' => ['staff.role_change'],
-            'approval limit change' => ['staff.approval_limit_change'],
             'bank account change' => ['bank_account.change'],
         ];
     }
@@ -157,20 +147,40 @@ final class MakerCheckerGuardTest extends TestCase
     #[Test]
     public function the_enforced_list_is_configuration_rather_than_code(): void
     {
+        // Empty by default (the business's current policy)...
         $this->assertFalse($this->guard->isEnforcedFor('some.new.operation'));
 
-        // The business can extend the control without a deployment.
-        config([
-            'naipay.maker_checker.enforced_operations' => ['some.new.operation'],
-        ]);
+        $staff = Staff::factory()->create();
+        $operation = new PendingOperation((int) $staff->getKey(), 'some.new.operation');
+        $this->assertTrue($this->guard->canApprove($staff, $operation));
+
+        // ...but the mechanism itself still works if re-enabled — this
+        // decision is a config change, not a code change.
+        config(['naipay.maker_checker.enforced_operations' => ['some.new.operation']]);
 
         $this->assertTrue($this->guard->isEnforcedFor('some.new.operation'));
+        $this->assertFalse($this->guard->canApprove($staff, $operation));
+        $this->expectException(MakerCheckerViolationException::class);
+        $this->guard->assertCanApprove($staff, $operation);
+    }
+
+    #[Test]
+    public function the_violation_is_reported_as_forbidden_with_an_actionable_message(): void
+    {
+        // The exception path itself still needs to behave correctly whenever
+        // an operation is configured as enforced.
+        config(['naipay.maker_checker.enforced_operations' => ['loan.disburse']]);
 
         $staff = Staff::factory()->create();
+        $operation = new PendingOperation((int) $staff->getKey(), 'loan.disburse');
 
-        $this->assertFalse(
-            $this->guard->canApprove($staff, new PendingOperation((int) $staff->getKey(), 'some.new.operation'))
-        );
+        try {
+            $this->guard->assertCanApprove($staff, $operation);
+            $this->fail('Expected a maker-checker violation.');
+        } catch (MakerCheckerViolationException $e) {
+            $this->assertSame(403, $e->status());
+            $this->assertStringContainsString('different authorised officer', $e->getMessage());
+        }
     }
 
     #[Test]

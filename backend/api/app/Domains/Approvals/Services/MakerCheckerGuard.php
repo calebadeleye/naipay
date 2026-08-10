@@ -14,18 +14,26 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Enforces segregation of duties: a staff member may never approve an
- * operation they created.
+ * operation they created — for whichever operations are actually configured
+ * as enforced.
  *
  * Centralised on purpose. This control is only as strong as its least careful
  * call site, and "the approving controller forgot to check" is exactly how it
  * fails in practice. Every approval path calls `assertCanApprove()` before it
- * changes state, and the enforced operations are configuration rather than
- * code so the business can extend the list without a deployment.
+ * changes state, and the enforced operations are configuration
+ * (`naipay.maker_checker.enforced_operations`) rather than code so the
+ * business can change the list without a deployment.
  *
- * Note this is a floor, not the whole control. It is meaningful only because
- * the role matrix also keeps both halves of each workflow out of one role's
- * hands — a Cashier records repayments but cannot approve any, so there is
- * nothing to bypass.
+ * That list is currently empty: the business decided a staff member holding
+ * an approval permission may use it on records they created themselves. This
+ * class is left in place rather than removed so that decision is a one-line
+ * config revert, not a reconstruction — see the comment in config/naipay.php.
+ *
+ * Note this was always a floor, not the whole control, even when enforced. It
+ * was meaningful only because the role matrix also keeps both halves of most
+ * workflows out of one role's hands — a Cashier records repayments but
+ * cannot approve any, so there was nothing for this guard to catch there
+ * regardless.
  */
 final class MakerCheckerGuard
 {
@@ -96,18 +104,6 @@ final class MakerCheckerGuard
     }
 
     /**
-     * Whether `$operation` accepts a password-only reauthentication. See
-     * naipay.security.reauthentication_two_factor_optional_operations.
-     */
-    private function twoFactorOptionalFor(string $operation): bool
-    {
-        /** @var array<int, string> $operations */
-        $operations = config('naipay.security.reauthentication_two_factor_optional_operations', []);
-
-        return in_array($operation, $operations, true);
-    }
-
-    /**
      * Refuses an operation named in naipay.security.
      * reauthentication_required_operations unless the actor's current token
      * proved their password (and 2FA code, if enabled) again within
@@ -161,5 +157,17 @@ final class MakerCheckerGuard
         ]);
 
         throw new ReauthenticationRequiredException($operation);
+    }
+
+    /**
+     * Whether `$operation` accepts a password-only reauthentication. See
+     * naipay.security.reauthentication_two_factor_optional_operations.
+     */
+    private function twoFactorOptionalFor(string $operation): bool
+    {
+        /** @var array<int, string> $operations */
+        $operations = config('naipay.security.reauthentication_two_factor_optional_operations', []);
+
+        return in_array($operation, $operations, true);
     }
 }

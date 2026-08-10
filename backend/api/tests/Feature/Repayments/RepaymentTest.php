@@ -446,7 +446,7 @@ final class RepaymentTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_verified_a_repayment_cannot_approve_it(): void
+    public function the_officer_who_verified_a_repayment_can_now_approve_it(): void
     {
         $verifier = $this->actingAsRole(Role::FinanceManager);
         $loan = $this->loanWithThreeInstalments();
@@ -458,10 +458,12 @@ final class RepaymentTest extends TestCase
             'status' => RepaymentStatus::Verified,
         ]);
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/repayments/{$repayment->id}/approve");
 
-        $response->assertForbidden();
-        $this->assertSame(RepaymentStatus::Verified, $repayment->fresh()->status);
+        $response->assertOk();
+        $this->assertSame(RepaymentStatus::Approved, $repayment->fresh()->status);
     }
 
     #[Test]
@@ -563,7 +565,7 @@ final class RepaymentTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_approved_a_repayment_cannot_reverse_it(): void
+    public function the_officer_who_approved_a_repayment_can_now_reverse_it(): void
     {
         $loan = $this->loanWithThreeInstalments();
         $verifier = Staff::factory()->create();
@@ -582,11 +584,14 @@ final class RepaymentTest extends TestCase
         $this->actingAsRole(Role::FinanceManager);
         Sanctum::actingAs($approver->fresh(), $approver->fresh()->permissionNames()->all(), 'staff');
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/repayments/{$repayment->id}/reverse", [
-            'reason' => 'Attempting to reverse my own approval.',
+            'reason' => 'Recorded against the wrong loan in error.',
         ]);
 
-        $response->assertForbidden();
+        $response->assertOk();
+        $this->assertSame(RepaymentStatus::Reversed->value, $response->json('data.status'));
     }
 
     #[Test]

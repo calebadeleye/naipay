@@ -159,30 +159,25 @@ return [
     |--------------------------------------------------------------------------
     |
     | Operations that may never be approved by the staff member who created
-    | them. Enforced centrally by the approval service, not per controller.
+    | them. Enforced centrally by MakerCheckerGuard, not per controller.
+    |
+    | Deliberately empty: the business decided a staff member holding an
+    | approval permission may use it on their own records, including ones
+    | they created themselves. The mechanism is left in place, config-driven,
+    | so this is a one-line revert if that decision ever changes rather than
+    | code that has to be reconstructed.
+    |
+    | `staff.role_change` and `staff.approval_limit_change` were never
+    | actually consulted by this list — nothing calls
+    | MakerCheckerGuard::assertCanApprove() for either operation. Their
+    | protection (a staff member can never change their own role or approval
+    | limit) is StaffManagementService::assertNotSelf(), a separate mechanism
+    | that this list has no bearing on.
     |
     */
 
     'maker_checker' => [
-        'enforced_operations' => [
-            'loan.approve',
-            'loan.disburse',
-            'repayment.approve',
-            'repayment.reverse',
-            'ledger.manual_credit',
-            'ledger.manual_debit',
-            'loan.interest_rate_change',
-            'loan.restructure',
-            'loan.write_off',
-            'account.close',
-            'loan_application.approve',
-            'merchant.approve',
-            'merchant.sensitive_update',
-            'staff.role_change',
-            'staff.approval_limit_change',
-            'bank_account.change',
-            'reconciliation.approve',
-        ],
+        'enforced_operations' => [],
 
         // When true, a staff member cannot approve an operation created by
         // anyone reporting to them either. Reserved for a later phase.

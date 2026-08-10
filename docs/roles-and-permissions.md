@@ -30,6 +30,21 @@ actually revoked rather than left behind. Access never accumulates silently.
 This is what makes maker-checker meaningful. Enforcing "not the same person" is worth
 little if one role can perform every step anyway.
 
+Role grants above are unchanged and still enforced — a Cashier cannot approve a
+repayment because it does not hold `repayments.approve` at all, regardless of what
+follows. What *has* changed: a handful of roles were always granted both sides of a
+control for reasons unrelated to segregation of duties (Credit Manager holds both
+`loan_applications.recommend` and `loan_applications.approve`; Finance Manager holds
+both `bank_accounts.manage`/`bank_accounts.approve` and both
+`reconciliation.match`/`reconciliation.approve`; Operations Manager and Branch Manager
+each hold both `merchants.create` and `merchants.approve`; Super Administrator holds
+everything). Previously, `MakerCheckerGuard` stopped even those roles from approving a
+specific record they had personally created or actioned. The business has since decided
+that additional same-person restriction should not apply: `naipay.maker_checker.enforced_operations`
+is now empty, so a role holding both sides of a control may complete the full workflow
+on a single record. The mechanism itself (`App\Domains\Approvals\Services\MakerCheckerGuard`)
+is still in place and config-driven, so this is reversible without a code change.
+
 **Least privilege.** Unmasked BVN and NIN (`merchants.view_sensitive`) are held by three
 roles only — Super Administrator, Credit Manager and Compliance Officer — because
 verifying identity documents and assessing credit are the only jobs that need them.
@@ -81,8 +96,12 @@ money. Configured in `naipay.security.reauthentication_required_operations`:
 | CRM | Credit Manager | AUD | Auditor |
 | CRO | Credit Officer | RO | Read-only User |
 | LNO | Loan Officer | | |
-| FIM | Finance Manager | | |
+| FIM | Finance Manager | IM | Investor Manager |
 | FIO | Finance Officer | | |
+
+Investor Manager (IM) is scoped narrowly to Dashboard and Investors — the only two
+sections it holds anything in — so it isn't shown as a column in the tables above; see
+the Investors table below instead.
 
 ### Dashboard
 
@@ -270,4 +289,18 @@ money. Configured in `naipay.security.reauthentication_required_operations`:
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `settings.view` | ● | ● | · | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `settings.manage` | ● | · | · | · | · | · | · | · | · | · | · | · | · | · | · |
+
+### Investors
+
+The only role, besides Super Administrator, that can add or manage an investor
+account — the external identity that signs in to the read-only investor portal.
+Executive and Auditor hold `investors.view` alongside every other domain's view
+permission, consistent with their "sees everything, changes nothing" scope.
+
+| Permission | SA | EXE | OPS | BRM | CRM | CRO | LNO | FIM | FIO | CSH | COL | CMP | SUP | AUD | RO | IM |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `investors.view` | ● | ● | · | · | · | · | · | · | · | · | · | · | · | ● | · | ● |
+| `investors.create` | ● | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ● |
+| `investors.update` | ● | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ● |
+| `investors.suspend` | ● | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ● |
 

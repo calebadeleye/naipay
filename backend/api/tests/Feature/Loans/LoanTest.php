@@ -18,7 +18,7 @@ use App\Domains\LoanApplications\Services\LoanApplicationService;
 use App\Domains\LoanProducts\Models\LoanProduct;
 use App\Domains\Loans\Enums\LoanStatus;
 use App\Domains\Loans\Models\Loan;
-use App\Support\Exceptions\MakerCheckerViolationException;
+use App\Support\Exceptions\DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -27,11 +27,13 @@ use Tests\TestCase;
  * Loan creation and disbursement.
  *
  * Three gates stand between a credit decision and money actually moving —
- * `loan_application.approve`, `loan.approve`, `loan.disburse` — each held by
- * a different officer than the one before it. What matters here: a loan can
- * never exist without the application that authorised it, disbursement can
- * never happen without a balanced ledger posting alongside it, and no single
- * officer can walk a loan through more than one of those three gates alone.
+ * `loan_application.approve`, `loan.approve`, `loan.disburse`. Disbursement is
+ * still a different officer than approval — `loan.disburse` is held only by
+ * Finance Manager, never Credit Manager. What matters here: a loan can never
+ * exist without the application that authorised it, and disbursement can
+ * never happen without a balanced ledger posting alongside it. Self-approval
+ * (the same officer who created or recommended a record also approving it) is
+ * no longer restricted — see docs/roles-and-permissions.md.
  */
 final class LoanTest extends TestCase
 {
@@ -65,17 +67,17 @@ final class LoanTest extends TestCase
     #[Test]
     public function an_application_that_fails_to_approve_never_leaves_a_loan_behind(): void
     {
-        // The application's own maker (its creator) cannot approve it, so the
-        // approve() call never reaches the point of creating a loan. Called
-        // directly against the service — no HTTP layer or acting user is
-        // needed to exercise this.
-        $maker = Staff::factory()->create();
-        $application = LoanApplication::factory()->recommended()->create(['created_by' => $maker->id]);
+        // An application that is not in a state approve() accepts (already
+        // Approved) fails before the loan-creation transaction is ever
+        // opened. Called directly against the service — no HTTP layer or
+        // acting user is needed to exercise this.
+        $actor = Staff::factory()->create();
+        $application = LoanApplication::factory()->approved()->create();
 
-        $this->expectException(MakerCheckerViolationException::class);
+        $this->expectException(DomainException::class);
 
         try {
-            app(LoanApplicationService::class)->approve($application, $maker);
+            app(LoanApplicationService::class)->approve($application, $actor);
         } finally {
             $this->assertSame(0, Loan::query()->where('loan_application_id', $application->id)->count());
         }
@@ -128,15 +130,15 @@ final class LoanTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_created_the_loan_cannot_approve_it(): void
+    public function the_officer_who_created_the_loan_can_now_approve_it(): void
     {
         $maker = $this->actingAsRole(Role::CreditManager);
         $loan = Loan::factory()->create(['created_by' => $maker->id]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/approve");
 
-        $response->assertForbidden();
-        $this->assertSame(LoanStatus::PendingApproval, $loan->fresh()->status);
+        $response->assertOk();
+        $this->assertSame(LoanStatus::PendingDisbursement, $loan->fresh()->status);
     }
 
     #[Test]
@@ -243,7 +245,7 @@ final class LoanTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_approved_the_loan_is_refused_by_maker_checker_even_with_the_permission(): void
+    public function the_officer_who_approved_the_loan_can_now_disburse_it(): void
     {
         $approver = $this->actingAsRole(Role::FinanceManager);
         $loan = Loan::factory()->create(['approved_by' => $approver->id, 'status' => LoanStatus::PendingDisbursement]);
@@ -252,12 +254,14 @@ final class LoanTest extends TestCase
             'account_purpose' => BankAccountPurpose::LoanDisbursement,
         ]);
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
             'bank_account_id' => $bankAccount->id,
         ]);
 
-        $response->assertForbidden();
-        $this->assertSame(LoanStatus::PendingDisbursement, $loan->fresh()->status);
+        $response->assertOk();
+        $this->assertSame(LoanStatus::Disbursed, $loan->fresh()->status);
     }
 
     #[Test]
@@ -376,16 +380,19 @@ final class LoanTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_approved_the_loan_cannot_write_it_off(): void
+    public function the_officer_who_approved_the_loan_can_now_write_it_off(): void
     {
         $approver = $this->actingAsRole(Role::FinanceManager);
         $loan = Loan::factory()->disbursed()->create(['approved_by' => $approver->id]);
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/write-off", [
-            'reason' => 'Attempting a write-off against the same officer who approved it.',
+            'reason' => 'Merchant ceased trading and is unreachable.',
         ]);
 
-        $response->assertForbidden();
+        $response->assertOk();
+        $this->assertSame(LoanStatus::WrittenOff->value, $response->json('data.status'));
     }
 
     #[Test]

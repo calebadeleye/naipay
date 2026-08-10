@@ -466,15 +466,17 @@ final class BankReconciliationTest extends TestCase
     }
 
     #[Test]
-    public function the_officer_who_prepared_a_reconciliation_cannot_approve_it(): void
+    public function the_officer_who_prepared_a_reconciliation_can_now_approve_it(): void
     {
         $preparer = $this->actingAsStaffWith([Permission::ReconciliationMatch, Permission::ReconciliationApprove]);
         $reconciliation = BankReconciliation::factory()->pendingApproval()->create(['prepared_by' => $preparer->id]);
 
+        // Self-approval is no longer restricted — see
+        // docs/roles-and-permissions.md.
         $response = $this->postJson("/api/v1/admin/reconciliations/{$reconciliation->id}/approve");
 
-        $response->assertForbidden();
-        $this->assertSame(BankReconciliationStatus::PendingApproval, $reconciliation->fresh()->status);
+        $response->assertOk();
+        $this->assertSame(BankReconciliationStatus::Approved->value, $response->json('data.status'));
     }
 
     #[Test]
