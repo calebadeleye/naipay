@@ -60,6 +60,9 @@ final class DocumentResource extends JsonResource
             'uploaded_by' => $document->relationLoaded('uploadedBy') && $document->uploadedBy !== null
                 ? $document->uploadedBy->fullName()
                 : null,
+            'uploaded_by_merchant' => $document->relationLoaded('uploadedByMerchant') && $document->uploadedByMerchant !== null
+                ? $document->uploadedByMerchant->fullName()
+                : null,
             'verified_by' => $document->relationLoaded('verifiedBy') && $document->verifiedBy !== null
                 ? $document->verifiedBy->fullName()
                 : null,

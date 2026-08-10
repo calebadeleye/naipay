@@ -34,4 +34,26 @@ enum MerchantStatus: string
     {
         return in_array($this, [self::Active, self::Dormant], true);
     }
+
+    /** Whether this status permits signing in to the merchant portal. */
+    public function canAuthenticate(): bool
+    {
+        return in_array($this, [self::Active, self::Dormant], true);
+    }
+
+    /**
+     * Message shown when a portal sign-in is refused because of this status.
+     *
+     * Deliberately non-specific about whether the account exists — see
+     * StaffStatus::refusalReason() for the same reasoning.
+     */
+    public function refusalReason(): ?string
+    {
+        return match ($this) {
+            self::Active, self::Dormant => null,
+            self::Inactive => 'Your account is not yet active. Contact your loan officer.',
+            self::Suspended => 'This account is suspended. Contact Every Merchant to regain access.',
+            self::Closed => 'This account is no longer active.',
+        };
+    }
 }

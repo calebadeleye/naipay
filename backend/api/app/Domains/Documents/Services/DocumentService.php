@@ -9,6 +9,7 @@ use App\Domains\Documents\Enums\DocumentVerificationStatus;
 use App\Domains\Documents\Models\Document;
 use App\Domains\Documents\Models\DocumentType;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Merchants\Models\Merchant;
 use App\Support\Exceptions\DomainException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,14 @@ final class DocumentService
      * If a current document of the same type already exists it is superseded
      * rather than replaced, and the new one starts at the next version.
      *
+     * `$actor` is a Staff member acting on someone's behalf, or — via the
+     * merchant self-service portal — the merchant uploading their own
+     * document. `uploaded_by` (FK to `staff`) and `uploaded_by_merchant_id`
+     * are mutually exclusive, mirroring how AuditLogger splits `staff_id`
+     * and `merchant_id`. A merchant-uploaded document starts at
+     * `Pending` exactly like a staff-uploaded one — verification stays
+     * staff-only regardless of who uploaded it.
+     *
      * @param  array<string, mixed>  $attributes
      */
     public function upload(
@@ -46,7 +55,7 @@ final class DocumentService
         DocumentType $type,
         UploadedFile $file,
         array $attributes,
-        Staff $actor,
+        Staff|Merchant $actor,
     ): Document {
         $this->assertTypeApplies($owner, $type);
         $this->assertRequiredMetadata($type, $attributes);
@@ -76,7 +85,8 @@ final class DocumentService
                     'version' => $previous === null ? 1 : $previous->version + 1,
                     'supersedes_id' => $previous?->getKey(),
                     'is_current' => true,
-                    'uploaded_by' => $actor->getKey(),
+                    'uploaded_by' => $actor instanceof Staff ? $actor->getKey() : null,
+                    'uploaded_by_merchant_id' => $actor instanceof Merchant ? $actor->getKey() : null,
                 ])->save();
 
                 if ($previous !== null) {

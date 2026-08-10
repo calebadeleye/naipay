@@ -14,15 +14,17 @@ use App\Domains\Merchants\Enums\OnboardingStatus;
 use App\Domains\Merchants\Enums\RiskRating;
 use App\Support\Security\BlindIndex;
 use App\Support\Security\Mask;
+use Carbon\Carbon;
 use Database\Factories\MerchantFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * A merchant — the individual or principal account holder.
@@ -43,11 +45,17 @@ use Illuminate\Notifications\Notifiable;
  * @property MerchantStatus $merchant_status
  * @property KycStatus $kyc_status
  * @property RiskRating|null $risk_rating
+ * @property string|null $password
+ * @property int $failed_login_attempts
+ * @property Carbon|null $locked_until
+ * @property Carbon|null $last_login_at
+ * @property string|null $last_login_ip
+ * @property Carbon|null $activated_at
  */
-class Merchant extends Model
+class Merchant extends Authenticatable
 {
     /** @use HasFactory<MerchantFactory> */
-    use BelongsToBranch, HasFactory, Notifiable, SoftDeletes;
+    use BelongsToBranch, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     public const BVN_INDEX_DOMAIN = 'merchant.bvn';
 
@@ -94,6 +102,8 @@ class Merchant extends Model
         'nin',
         'bvn_index',
         'nin_index',
+        'password',
+        'remember_token',
     ];
 
     // --- Relationships -----------------------------------------------------
@@ -172,6 +182,31 @@ class Merchant extends Model
         return $this->onboarding_status->isApproved();
     }
 
+    // --- Portal authentication -----------------------------------------------
+
+    public function isLocked(): bool
+    {
+        return $this->locked_until !== null && $this->locked_until->isFuture();
+    }
+
+    /**
+     * Whether this account may sign in to the merchant portal right now,
+     * ignoring credentials.
+     */
+    public function canAuthenticate(): bool
+    {
+        return $this->password !== null
+            && $this->onboarding_status->isApproved()
+            && $this->merchant_status->canAuthenticate()
+            && ! $this->isLocked()
+            && $this->deleted_at === null;
+    }
+
+    public static function findForAuthentication(string $email): ?self
+    {
+        return self::query()->where('email', mb_strtolower(trim($email)))->first();
+    }
+
     /**
      * Whether a new loan may be originated for this merchant.
      *
@@ -229,6 +264,11 @@ class Merchant extends Model
             'submitted_at' => 'datetime',
             'verified_at' => 'datetime',
             'approved_at' => 'datetime',
+            'password' => 'hashed',
+            'failed_login_attempts' => 'integer',
+            'locked_until' => 'datetime',
+            'last_login_at' => 'datetime',
+            'activated_at' => 'datetime',
         ];
     }
 }

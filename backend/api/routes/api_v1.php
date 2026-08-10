@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Route;
 |
 |   /api/v1/admin/...     internal staff (this release)
 |   /api/v1/investor/...  read-only investor dashboard (this release)
-|   /api/v1/merchant/...  merchant portal and mobile app (future phase)
+|   /api/v1/merchant/...  merchant self-service portal (this release); the
+|                         mobile app shares this same surface (future phase)
 |
 | Domain route files are registered below as each phase lands, keeping this
 | file a table of contents rather than a route dump.
@@ -34,6 +35,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
 Route::prefix('investor')->name('investor.')->group(function (): void {
     foreach (glob(__DIR__.'/investor/*.php') ?: [] as $routeFile) {
+        require $routeFile;
+    }
+});
+
+Route::prefix('merchant')->name('merchant.')->group(function (): void {
+    foreach (glob(__DIR__.'/merchant/*.php') ?: [] as $routeFile) {
         require $routeFile;
     }
 });

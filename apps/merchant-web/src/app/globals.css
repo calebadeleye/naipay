@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+@import '@naipay/design-tokens/css';
+
+/**
+ * Every Merchant portal — global styles.
+ *
+ * Shares the same design tokens and glass visual language as the
+ * administrative console, so a merchant moving between an email, this
+ * portal, and anything staff-facing they've seen sees one consistent brand.
+ */
+
+@theme inline {
+  --color-brand-50: var(--naipay-brand-50);
+  --color-brand-100: var(--naipay-brand-100);
+  --color-brand-200: var(--naipay-brand-200);
+  --color-brand-300: var(--naipay-brand-300);
+  --color-brand-400: var(--naipay-brand-400);
+  --color-brand-500: var(--naipay-brand-500);
+  --color-brand-600: var(--naipay-brand-600);
+  --color-brand-700: var(--naipay-brand-700);
+  --color-brand-800: var(--naipay-brand-800);
+  --color-brand-900: var(--naipay-brand-900);
+  --color-brand-950: var(--naipay-brand-950);
+
+  --color-accent-50: var(--naipay-accent-50);
+  --color-accent-100: var(--naipay-accent-100);
+  --color-accent-200: var(--naipay-accent-200);
+  --color-accent-300: var(--naipay-accent-300);
+  --color-accent-400: var(--naipay-accent-400);
+  --color-accent-500: var(--naipay-accent-500);
+  --color-accent-600: var(--naipay-accent-600);
+  --color-accent-700: var(--naipay-accent-700);
+  --color-accent-800: var(--naipay-accent-800);
+  --color-accent-900: var(--naipay-accent-900);
+  --color-accent-950: var(--naipay-accent-950);
+
+  --color-success: var(--naipay-success);
+  --color-success-surface: var(--naipay-success-surface);
+  --color-warning: var(--naipay-warning);
+  --color-warning-surface: var(--naipay-warning-surface);
+  --color-danger: var(--naipay-danger);
+  --color-danger-surface: var(--naipay-danger-surface);
+  --color-info: var(--naipay-info);
+  --color-info-surface: var(--naipay-info-surface);
+
+  --font-sans: var(--font-inter), var(--naipay-font-sans);
+  --font-mono: var(--font-jetbrains-mono), var(--naipay-font-mono);
+}
+
+body {
+  background:
+    url('/bg.jpg') center / cover fixed no-repeat,
+    var(--naipay-background);
+  color: var(--naipay-text);
+}
+
+/* A frosted surface — the shared look behind every card, form and shell. */
+.glass-surface {
+  background: color-mix(in srgb, var(--naipay-surface) 68%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in srgb, white 55%, transparent);
+  box-shadow: 0 8px 32px -4px color-mix(in srgb, var(--naipay-brand-900) 12%, transparent);
+}
+
+.glass-scrim {
+  background: color-mix(in srgb, var(--naipay-surface) 40%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.glass-surface-dark {
+  background: color-mix(in srgb, var(--naipay-brand-900) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+}
+
+/* The sign-in and account pages' own backdrop. */
+.glass-backdrop-dark {
+  background:
+    radial-gradient(900px 700px at 12% 8%, color-mix(in srgb, var(--naipay-brand-600) 45%, transparent), transparent 60%),
+    radial-gradient(800px 650px at 92% 88%, color-mix(in srgb, var(--naipay-brand-500) 35%, transparent), transparent 55%),
+    var(--naipay-brand-950);
+}
+
+/* Monetary amounts, references and account numbers. */
+.numeric {
+  font-family: var(--naipay-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--naipay-brand-600);
+  outline-offset: 2px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

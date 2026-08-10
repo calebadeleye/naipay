@@ -6,6 +6,7 @@ namespace App\Domains\Audit\Services;
 
 use App\Domains\Audit\Models\AuditLog;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Merchants\Models\Merchant;
 use App\Support\Correlation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,9 @@ use Illuminate\Support\Facades\Auth;
  *
  * Every sensitive action routes through here, so the actor, the change, the
  * reason and the request context are captured the same way each time rather
- * than depending on each call site remembering the full set.
+ * than depending on each call site remembering the full set. The actor is
+ * either a Staff member or, since the merchant self-service portal, a
+ * Merchant acting on their own record — never both, see AuditLog.
  *
  * Values are scrubbed before they are written: an audit entry recording that a
  * merchant's BVN changed must record *that* it changed, never the value.
@@ -36,17 +39,24 @@ final class AuditLogger
         array $newValues = [],
         ?string $reason = null,
         string $eventType = 'update',
-        ?Staff $actor = null,
+        Staff|Merchant|null $actor = null,
     ): AuditLog {
         $actor ??= $this->currentActor();
         $request = request();
 
         return AuditLog::create([
-            'staff_id' => $actor?->getKey(),
+            'staff_id' => $actor instanceof Staff ? $actor->getKey() : null,
+            'merchant_id' => $actor instanceof Merchant ? $actor->getKey() : null,
+            'actor_type' => match (true) {
+                $actor instanceof Staff => 'staff',
+                $actor instanceof Merchant => 'merchant',
+                default => null,
+            },
             'actor_name' => $actor?->fullName(),
             // Denormalised so the entry still explains what authority the actor
-            // held at the time, even after their roles change.
-            'actor_roles' => $actor !== null
+            // held at the time, even after their roles change. Meaningless for
+            // a merchant actor, who holds no roles.
+            'actor_roles' => $actor instanceof Staff
                 ? mb_substr($actor->roleNames()->implode(', '), 0, 400)
                 : null,
 
@@ -82,7 +92,7 @@ final class AuditLogger
         Model $subject,
         array $before,
         ?string $reason = null,
-        ?Staff $actor = null,
+        Staff|Merchant|null $actor = null,
     ): AuditLog {
         $after = $subject->getAttributes();
 
@@ -120,7 +130,7 @@ final class AuditLogger
         string $action,
         string $module,
         Model $subject,
-        ?Staff $actor = null,
+        Staff|Merchant|null $actor = null,
     ): AuditLog {
         return $this->record(
             action: $action,

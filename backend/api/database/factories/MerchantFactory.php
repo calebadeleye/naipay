@@ -16,6 +16,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 final class MerchantFactory extends Factory
 {
+    /**
+     * The password every generated activated account shares, so tests can
+     * sign in without each one inventing its own.
+     */
+    public const PASSWORD = 'Naipay-Test-Pass1!';
+
     protected $model = Merchant::class;
 
     /**
@@ -99,6 +105,17 @@ final class MerchantFactory extends Factory
             'submitted_at' => now(),
             'verified_at' => now(),
             'approved_at' => now(),
+        ]);
+    }
+
+    /**
+     * A portal account that has completed activation and can sign in.
+     */
+    public function withPassword(): self
+    {
+        return $this->state(fn (): array => [
+            'password' => self::PASSWORD,
+            'activated_at' => now(),
         ]);
     }
 }

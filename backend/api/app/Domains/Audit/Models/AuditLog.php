@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Audit\Models;
 
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Merchants\Models\Merchant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -19,8 +20,14 @@ use RuntimeException;
  * table is worth more than the convenience of being able to correct a typo in
  * it, and a correction would itself be an unrecorded change.
  *
+ * An entry has at most one actor: `staff_id` and `merchant_id` are mutually
+ * exclusive, and `actor_type` ('staff', 'merchant', or null for the system
+ * itself) says which — see AuditLogger.
+ *
  * @property int $id
  * @property int|null $staff_id
+ * @property int|null $merchant_id
+ * @property string|null $actor_type
  * @property string|null $actor_name
  * @property string $action
  * @property string $module
@@ -41,6 +48,8 @@ class AuditLog extends Model
      */
     protected $fillable = [
         'staff_id',
+        'merchant_id',
+        'actor_type',
         'actor_name',
         'actor_roles',
         'action',
@@ -64,6 +73,14 @@ class AuditLog extends Model
     public function staff(): BelongsTo
     {
         return $this->belongsTo(Staff::class);
+    }
+
+    /**
+     * @return BelongsTo<Merchant, $this>
+     */
+    public function merchant(): BelongsTo
+    {
+        return $this->belongsTo(Merchant::class);
     }
 
     /**

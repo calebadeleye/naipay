@@ -6,6 +6,7 @@ namespace App\Domains\Documents\Models;
 
 use App\Domains\Documents\Enums\DocumentVerificationStatus;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Merchants\Models\Merchant;
 use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -71,6 +72,18 @@ class Document extends Model
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'uploaded_by');
+    }
+
+    /**
+     * Set instead of `uploadedBy` when the merchant uploaded this document
+     * themselves through the self-service portal — the two are mutually
+     * exclusive.
+     *
+     * @return BelongsTo<Merchant, $this>
+     */
+    public function uploadedByMerchant(): BelongsTo
+    {
+        return $this->belongsTo(Merchant::class, 'uploaded_by_merchant_id');
     }
 
     /**

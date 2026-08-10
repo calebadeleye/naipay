@@ -116,6 +116,33 @@ final class MerchantOnboardingService
     }
 
     /**
+     * A merchant editing their own profile through the self-service portal.
+     *
+     * Deliberately narrower than update(): no BVN/NIN (identity numbers stay
+     * a staff/KYC-verification concern — a merchant silently overwriting
+     * their own without re-verification would be a KYC hole, not a
+     * convenience), no branch/officer assignment, no onboarding-status gate.
+     * `$attributes` is expected to already be restricted to safe fields by
+     * UpdateMerchantSelfRequest; this method does not re-check that, the same
+     * way update() trusts UpdateMerchantRequest.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateSelf(Merchant $merchant, array $attributes): Merchant
+    {
+        return DB::transaction(function () use ($merchant, $attributes): Merchant {
+            $before = $merchant->getAttributes();
+
+            $merchant->fill($attributes);
+            $merchant->save();
+
+            $this->audit->recordChange('merchant.self_updated', self::MODULE, $merchant, $before, actor: $merchant);
+
+            return $merchant->fresh();
+        });
+    }
+
+    /**
      * Submits a draft for verification.
      *
      * A merchant without a business is refused here rather than at approval:

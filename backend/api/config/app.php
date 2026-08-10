@@ -84,6 +84,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Merchant portal URL
+    |--------------------------------------------------------------------------
+    |
+    | Where the standalone merchant self-service Next.js app is served. Used to
+    | build links in emails — account activation and password resets — which
+    | must point at that app, never at the API.
+    |
+    */
+
+    'merchant_url' => env('MERCHANT_APP_URL', 'http://localhost:3001'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -5,6 +5,7 @@
   "description": "Naipay — merchant microfinance administration platform",
   "workspaces": [
     "apps/admin-web",
+    "apps/merchant-web",
     "packages/shared-types",
     "packages/api-client",
     "packages/validation",
@@ -15,6 +16,7 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace apps/admin-web",
+    "dev:merchant": "npm run dev --workspace apps/merchant-web",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",

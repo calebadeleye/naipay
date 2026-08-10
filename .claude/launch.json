@@ -15,6 +15,12 @@
         "cd backend/api && /usr/local/opt/php@8.3/bin/php artisan serve --host=127.0.0.1 --port=8000"
       ],
       "port": 8000
+    },
+    {
+      "name": "naipay-merchant-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "apps/merchant-web"],
+      "port": 3001
     }
   ]
 }

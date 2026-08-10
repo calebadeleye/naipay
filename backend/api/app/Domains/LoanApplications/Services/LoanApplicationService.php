@@ -16,6 +16,7 @@ use App\Domains\LoanApplications\Notifications\LoanApplicationApprovedNotificati
 use App\Domains\LoanApplications\Notifications\LoanApplicationRejectedNotification;
 use App\Domains\LoanProducts\Models\LoanProduct;
 use App\Domains\Loans\Services\LoanCreationService;
+use App\Domains\Merchants\Models\Merchant;
 use App\Support\Exceptions\DomainException;
 use App\Support\Money\Money;
 use App\Support\Sequences\ReferenceGenerator;
@@ -45,9 +46,15 @@ final class LoanApplicationService
     /**
      * Creates an application in Draft.
      *
+     * `$actor` is a Staff member acting on a merchant's behalf, or — via the
+     * merchant self-service portal — the merchant themselves applying for
+     * their own loan. `created_by` is a FK to `staff` only, so it is left
+     * unset for a merchant actor; the audit trail still records who acted via
+     * `AuditLogger`'s own actor columns.
+     *
      * @param  array<string, mixed>  $attributes
      */
-    public function create(array $attributes, Staff $actor): LoanApplication
+    public function create(array $attributes, Staff|Merchant $actor): LoanApplication
     {
         /** @var LoanProduct $product */
         $product = LoanProduct::query()->findOrFail($attributes['loan_product_id']);
@@ -64,7 +71,10 @@ final class LoanApplicationService
             $application->requested_tenor = $tenor;
             $application->application_number = $this->references->next('loan_application');
             $application->status = LoanApplicationStatus::Draft;
-            $application->created_by = $actor->getKey();
+
+            if ($actor instanceof Staff) {
+                $application->created_by = $actor->getKey();
+            }
 
             // Defaults to the merchant's branch, so a branch-scoped officer
             // never creates a record they cannot then see.
@@ -291,7 +301,12 @@ final class LoanApplicationService
         );
     }
 
-    public function withdraw(LoanApplication $application, string $reason, Staff $actor): LoanApplication
+    /**
+     * `$actor` may be the merchant themselves, withdrawing their own
+     * application via the self-service portal. `withdrawn_by` is a FK to
+     * `staff` only, so it is left unset for a merchant actor — see create().
+     */
+    public function withdraw(LoanApplication $application, string $reason, Staff|Merchant $actor): LoanApplication
     {
         if (! $application->status->isEditable() && ! $application->status->isPendingDecision()) {
             throw new DomainException(
@@ -309,7 +324,7 @@ final class LoanApplicationService
             reason: $reason,
             extra: [
                 'withdrawal_reason' => $reason,
-                'withdrawn_by' => $actor->getKey(),
+                'withdrawn_by' => $actor instanceof Staff ? $actor->getKey() : null,
                 'withdrawn_at' => now(),
             ],
         );
@@ -391,7 +406,7 @@ final class LoanApplicationService
         LoanApplication $application,
         LoanApplicationStatus $status,
         string $action,
-        ?Staff $actor,
+        Staff|Merchant|null $actor,
         ?string $reason = null,
         array $extra = [],
     ): LoanApplication {

@@ -8,6 +8,7 @@ use App\Domains\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Domains\Identity\Enums\Permission;
 use App\Domains\Identity\Enums\Role;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Merchants\Models\Merchant;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
@@ -22,9 +23,21 @@ abstract class TestCase extends BaseTestCase
      * The cache is process-wide and survives the database rollback between
      * tests, so without the flush a test can see the permission map left by
      * the previous one.
+     *
+     * RolePermissionSeeder reads config('auth.defaults.guard') to decide
+     * which guard to seed for — always "staff", the only guard with a
+     * permission system. But Laravel's `Authenticate` middleware calls
+     * `Auth::shouldUse($guard)` on every request through a multi-guard route
+     * (`auth:merchant`, `auth:investor`), which writes straight into that
+     * config key — not just an in-memory default — so a test that has made
+     * any merchant/investor-authenticated request beforehand would otherwise
+     * silently seed roles under the wrong guard. Forced back to "staff" here
+     * because that is unconditionally what this helper means to seed for.
      */
     protected function seedRolesAndPermissions(): void
     {
+        config(['auth.defaults.guard' => 'staff']);
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $this->seed(RolePermissionSeeder::class);
@@ -92,6 +105,25 @@ abstract class TestCase extends BaseTestCase
         Sanctum::actingAs($staff, $staff->permissionNames()->all(), 'staff');
 
         return $staff;
+    }
+
+    /**
+     * Creates an activated merchant and signs them in for the self-service
+     * portal, mirroring actingAsRole() for staff.
+     *
+     * If a test needs to act as staff (e.g. via actingAsRole()) after this,
+     * see the note on seedRolesAndPermissions() — signing in here, or making
+     * any request through an `auth:merchant` route afterward, changes which
+     * guard is "default" process-wide.
+     */
+    protected function actingAsMerchant(array $attributes = []): Merchant
+    {
+        $merchant = Merchant::factory()->approved()->withPassword()->create($attributes);
+        $merchant = $merchant->fresh();
+
+        Sanctum::actingAs($merchant, ['portal:self'], 'merchant');
+
+        return $merchant;
     }
 
     /**

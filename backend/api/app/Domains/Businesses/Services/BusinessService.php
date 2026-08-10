@@ -80,6 +80,37 @@ final class BusinessService
     }
 
     /**
+     * A merchant editing their own business through the self-service portal.
+     *
+     * Deliberately narrower than update(): `status` and `verification_status`
+     * are never accepted here — those stay service-set only, exactly as they
+     * already are for staff. `$attributes` is expected to already be
+     * restricted to safe fields by UpdateBusinessSelfRequest.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateSelf(Business $business, array $attributes, Merchant $actor): Business
+    {
+        return DB::transaction(function () use ($business, $attributes, $actor): Business {
+            $before = $business->getAttributes();
+
+            if (array_key_exists('business_category_id', $attributes) || array_key_exists('business_subcategory_id', $attributes)) {
+                $this->assertCategoriesAreSelectable(
+                    $attributes['business_category_id'] ?? $business->business_category_id,
+                    $attributes['business_subcategory_id'] ?? $business->business_subcategory_id,
+                );
+            }
+
+            $business->fill($attributes);
+            $business->save();
+
+            $this->audit->recordChange('business.self_updated', self::MODULE, $business, $before, actor: $actor);
+
+            return $business->fresh();
+        });
+    }
+
+    /**
      * Records the outcome of a field verification.
      */
     public function verify(Business $business, Staff $actor): Business
