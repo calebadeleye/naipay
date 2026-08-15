@@ -33,6 +33,7 @@ export interface Repayment {
   payment_method_label: string;
 
   sender_account_name: string | null;
+  sender_account_number: string | null;
   sender_bank_name: string | null;
   bank_reference: string | null;
   notes: string | null;
@@ -68,6 +69,7 @@ export interface RepaymentFormInput {
   payment_date: string;
   payment_method: string;
   sender_account_name?: string;
+  sender_account_number?: string;
   sender_bank_name?: string;
   bank_reference?: string;
   notes?: string;

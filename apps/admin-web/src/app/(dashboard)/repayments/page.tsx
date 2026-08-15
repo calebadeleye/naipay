@@ -63,7 +63,7 @@ export default function RepaymentsPage() {
       <div className="flex flex-wrap gap-3">
         <Field
           label="Search"
-          placeholder="Repayment or bank reference"
+          placeholder="Account number, name, or reference"
           value={search}
           onChange={(event) => {
             setPage(1);

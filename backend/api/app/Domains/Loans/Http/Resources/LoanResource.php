@@ -75,6 +75,9 @@ final class LoanResource extends JsonResource
                 'merchant_number' => $loan->merchant->merchant_number,
                 'full_name' => $loan->merchant->fullName(),
                 'email' => $loan->merchant->email,
+                'account_number' => $loan->merchant->relationLoaded('account') && $loan->merchant->account !== null
+                    ? $loan->merchant->account->account_number
+                    : null,
             ] : null,
 
             'business' => $loan->relationLoaded('business') && $loan->business !== null ? [

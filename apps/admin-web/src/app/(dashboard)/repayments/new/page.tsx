@@ -35,7 +35,10 @@ function LoanPicker({ selected, onSelect }: { selected: Loan | null; onSelect: (
         <div className="flex items-center justify-between rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
           <div>
             <p className="numeric font-medium text-slate-900">{selected.loan_reference}</p>
-            <p className="text-xs text-slate-500">{selected.merchant?.full_name}</p>
+            <p className="text-xs text-slate-500">
+              {selected.merchant?.full_name}
+              {selected.merchant?.account_number ? ` · ${selected.merchant.account_number}` : ''}
+            </p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={() => onSelect(null)}>
             Change
@@ -49,7 +52,7 @@ function LoanPicker({ selected, onSelect }: { selected: Loan | null; onSelect: (
     <div className="space-y-1.5">
       <Field
         label="Loan"
-        placeholder="Search by loan reference"
+        placeholder="Search by account number, name, or loan reference"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         hint="Type at least 2 characters to search disbursed loans."
@@ -67,7 +70,10 @@ function LoanPicker({ selected, onSelect }: { selected: Loan | null; onSelect: (
                 className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm last:border-0 hover:bg-slate-50"
               >
                 <p className="numeric font-medium text-slate-900">{loan.loan_reference}</p>
-                <p className="text-xs text-slate-500">{loan.merchant?.full_name}</p>
+                <p className="text-xs text-slate-500">
+                  {loan.merchant?.full_name}
+                  {loan.merchant?.account_number ? ` · ${loan.merchant.account_number}` : ''}
+                </p>
               </button>
             ))
           ) : (
@@ -95,6 +101,7 @@ function NewRepaymentForm() {
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
   const [senderAccountName, setSenderAccountName] = useState('');
+  const [senderAccountNumber, setSenderAccountNumber] = useState('');
   const [senderBankName, setSenderBankName] = useState('');
   const [bankReference, setBankReference] = useState('');
   const [notes, setNotes] = useState('');
@@ -104,6 +111,11 @@ function NewRepaymentForm() {
   const error = createRepayment.error instanceof ApiError ? createRepayment.error : null;
 
   const isDuplicateWarning = Boolean(error?.isConflict && /duplicate/i.test(error.message));
+
+  function handleSelectLoan(selectedLoan: Loan | null) {
+    setLoan(selectedLoan);
+    setSenderAccountNumber(selectedLoan?.merchant?.account_number ?? '');
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -117,6 +129,7 @@ function NewRepaymentForm() {
         payment_date: paymentDate,
         payment_method: paymentMethod,
         sender_account_name: senderAccountName || undefined,
+        sender_account_number: senderAccountNumber || undefined,
         sender_bank_name: senderBankName || undefined,
         bank_reference: bankReference || undefined,
         notes: notes || undefined,
@@ -150,7 +163,7 @@ function NewRepaymentForm() {
             </Alert>
           ) : null}
 
-          <LoanPicker selected={loan} onSelect={setLoan} />
+          <LoanPicker selected={loan} onSelect={handleSelectLoan} />
 
           <SelectField
             label="Receiving bank account"
@@ -196,12 +209,20 @@ function NewRepaymentForm() {
               error={error?.fieldError('sender_account_name')}
             />
             <Field
-              label="Sender bank name"
-              value={senderBankName}
-              onChange={(event) => setSenderBankName(event.target.value)}
-              error={error?.fieldError('sender_bank_name')}
+              label="Sender account number"
+              value={senderAccountNumber}
+              onChange={(event) => setSenderAccountNumber(event.target.value)}
+              error={error?.fieldError('sender_account_number')}
+              hint={loan ? 'Filled from the selected loan’s merchant account. Edit if it’s wrong.' : undefined}
             />
           </div>
+
+          <Field
+            label="Sender bank name"
+            value={senderBankName}
+            onChange={(event) => setSenderBankName(event.target.value)}
+            error={error?.fieldError('sender_bank_name')}
+          />
 
           <Field
             label="Bank reference"

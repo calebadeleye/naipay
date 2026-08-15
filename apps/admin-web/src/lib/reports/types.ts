@@ -38,6 +38,8 @@ export interface DashboardSummary {
   loan_applications: Record<LoanApplicationStatusKey, number>;
   loans: Record<LoanStatusKey, number> & {
     total_outstanding_principal: string;
+    total_capital_disbursed: string;
+    total_expected_interest: string;
   };
   repayments: {
     pending_verification: number;

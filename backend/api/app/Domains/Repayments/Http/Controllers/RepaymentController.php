@@ -33,7 +33,7 @@ final class RepaymentController
         $actor = $request->user();
 
         $specification = QuerySpecification::make(
-            searchable: ['repayment_reference', 'bank_reference'],
+            searchable: ['repayment_reference', 'bank_reference', 'merchant.first_name', 'merchant.last_name', 'merchant.account.account_number'],
             filters: [
                 'status' => FilterType::In,
                 'loan_id' => FilterType::Exact,

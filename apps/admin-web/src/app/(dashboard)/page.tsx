@@ -81,11 +81,23 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </dl>
-                <div className="mt-4 border-t border-slate-100 pt-3">
+                <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
                   <div className="flex items-center justify-between text-sm">
                     <dt className="font-medium text-slate-900">Total outstanding principal</dt>
                     <dd className="numeric font-semibold text-slate-900">
                       {formatAmountString(data.loans.total_outstanding_principal)}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <dt className="font-medium text-slate-900">Capital sent out</dt>
+                    <dd className="numeric font-semibold text-slate-900">
+                      {formatAmountString(data.loans.total_capital_disbursed)}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <dt className="font-medium text-slate-900">Expected interest</dt>
+                    <dd className="numeric font-semibold text-slate-900">
+                      {formatAmountString(data.loans.total_expected_interest)}
                     </dd>
                   </div>
                 </div>

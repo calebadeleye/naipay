@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
 
 final class LoanController
 {
-    private const RELATIONS = ['merchant', 'business', 'loanProduct', 'branch', 'createdBy', 'approvedBy', 'disbursementBankAccount', 'disbursedBy', 'writtenOffBy'];
+    private const RELATIONS = ['merchant.account', 'business', 'loanProduct', 'branch', 'createdBy', 'approvedBy', 'disbursementBankAccount', 'disbursedBy', 'writtenOffBy'];
 
     public function __construct(
         private readonly LoanService $loans,
@@ -40,7 +40,7 @@ final class LoanController
         $actor = $request->user();
 
         $specification = QuerySpecification::make(
-            searchable: ['loan_reference'],
+            searchable: ['loan_reference', 'merchant.first_name', 'merchant.last_name', 'merchant.account.account_number'],
             filters: [
                 'status' => FilterType::In,
                 'merchant_id' => FilterType::Exact,
@@ -54,7 +54,7 @@ final class LoanController
             defaultSort: ['-created_at'],
         );
 
-        $query = Loan::query()->visibleTo($actor)->with(['merchant', 'business', 'loanProduct']);
+        $query = Loan::query()->visibleTo($actor)->with(['merchant.account', 'business', 'loanProduct']);
 
         $loans = QueryPipeline::for($request, $specification)->paginate($query);
 
@@ -85,7 +85,7 @@ final class LoanController
         $updated = $this->loans->approve($loan, $actor);
 
         return ApiResponse::success(
-            new LoanResource($updated->load(self::RELATIONS)),
+            new LoanResource($updated->load([...self::RELATIONS, 'scheduleEntries'])),
             "{$updated->loan_reference} is approved and ready for disbursement.",
         );
     }
@@ -126,7 +126,7 @@ final class LoanController
         $updated = $this->loans->writeOff($loan, $request->validated('reason'), $actor);
 
         return ApiResponse::success(
-            new LoanResource($updated->load(self::RELATIONS)),
+            new LoanResource($updated->load([...self::RELATIONS, 'scheduleEntries'])),
             "{$updated->loan_reference} has been written off.",
         );
     }

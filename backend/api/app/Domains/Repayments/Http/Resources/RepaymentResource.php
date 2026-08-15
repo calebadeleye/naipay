@@ -38,6 +38,7 @@ final class RepaymentResource extends JsonResource
             'payment_method_label' => $repayment->payment_method->label(),
 
             'sender_account_name' => $repayment->sender_account_name,
+            'sender_account_number' => $repayment->sender_account_number,
             'sender_bank_name' => $repayment->sender_bank_name,
             'bank_reference' => $repayment->bank_reference,
             'notes' => $repayment->notes,

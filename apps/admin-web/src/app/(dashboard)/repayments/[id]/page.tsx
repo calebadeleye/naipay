@@ -160,6 +160,7 @@ export default function RepaymentDetailPage() {
                 <Detail label="Method" value={repayment.payment_method_label} />
                 <Detail label="Receiving account" value={repayment.receiving_bank_account} />
                 <Detail label="Sender account" value={repayment.sender_account_name} />
+                <Detail label="Sender account number" value={repayment.sender_account_number} />
                 <Detail label="Sender bank" value={repayment.sender_bank_name} />
                 <Detail label="Bank reference" value={repayment.bank_reference} />
                 <Detail

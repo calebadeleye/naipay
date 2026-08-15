@@ -52,6 +52,7 @@ class Repayment extends Model
         'payment_date',
         'payment_method',
         'sender_account_name',
+        'sender_account_number',
         'sender_bank_name',
         'bank_reference',
         'notes',

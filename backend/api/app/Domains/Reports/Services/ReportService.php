@@ -54,7 +54,11 @@ final class ReportService
 
             'loans' => array_merge(
                 $this->countsByStatus(Loan::query(), 'status', array_map(static fn (LoanStatus $s): string => $s->value, LoanStatus::cases())),
-                ['total_outstanding_principal' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_principal')->toDecimalString()],
+                [
+                    'total_outstanding_principal' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_principal')->toDecimalString(),
+                    'total_capital_disbursed' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'principal_amount')->toDecimalString(),
+                    'total_expected_interest' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'total_interest')->toDecimalString(),
+                ],
             ),
 
             'repayments' => [

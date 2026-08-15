@@ -32,7 +32,7 @@ const emptyForm: BusinessFormInput = {
   city: '',
   state: '',
   country: 'Nigeria',
-  website: '',
+  business_website: '',
   year_established: '',
   number_of_employees: '',
   estimated_monthly_revenue: '',
@@ -216,9 +216,9 @@ function NewBusinessForm() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Website"
-                value={form.website}
-                onChange={(event) => set('website', event.target.value)}
-                error={error?.fieldError('website')}
+                value={form.business_website}
+                onChange={(event) => set('business_website', event.target.value)}
+                error={error?.fieldError('business_website')}
               />
               <Field
                 label="Year established"

@@ -34,7 +34,7 @@ export interface Business {
   city: string | null;
   state: string | null;
   country: string | null;
-  website: string | null;
+  business_website: string | null;
   social_media_links: Record<string, string> | null;
 
   gps_latitude: number | null;
@@ -81,7 +81,7 @@ export interface BusinessFormInput {
   city?: string;
   state?: string;
   country?: string;
-  website?: string;
+  business_website?: string;
   year_established?: number | string;
   number_of_employees?: number | string;
   estimated_monthly_revenue?: string;

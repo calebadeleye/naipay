@@ -51,7 +51,7 @@ export default function LoansPage() {
       <div className="flex flex-wrap gap-3">
         <Field
           label="Search"
-          placeholder="Loan reference"
+          placeholder="Account number, name, or loan reference"
           value={search}
           onChange={(event) => {
             setPage(1);

@@ -30,6 +30,7 @@ final class StoreRepaymentRequest extends FormRequest
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
 
             'sender_account_name' => ['nullable', 'string', 'max:200'],
+            'sender_account_number' => ['nullable', 'string', 'max:34'],
             'sender_bank_name' => ['nullable', 'string', 'max:150'],
             'bank_reference' => ['nullable', 'string', 'max:100'],
 
