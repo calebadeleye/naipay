@@ -61,6 +61,8 @@ export interface LoanApplication {
     merchant_number: string;
     full_name: string;
     can_borrow: boolean;
+    account_number: string | null;
+    account_number_formatted: string | null;
   } | null;
 
   business: {

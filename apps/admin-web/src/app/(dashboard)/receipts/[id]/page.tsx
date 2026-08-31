@@ -51,7 +51,7 @@ export default function ReceiptDetailPage() {
                 value={
                   receipt.loan ? (
                     <Link href={`/loans/${receipt.loan.id}`} className="text-brand-700 hover:underline">
-                      {receipt.loan.loan_reference}
+                      View loan
                     </Link>
                   ) : null
                 }
@@ -61,7 +61,7 @@ export default function ReceiptDetailPage() {
                 value={
                   receipt.repayment ? (
                     <Link href={`/repayments/${receipt.repayment.id}`} className="text-brand-700 hover:underline">
-                      {receipt.repayment.repayment_reference}
+                      View repayment
                     </Link>
                   ) : null
                 }

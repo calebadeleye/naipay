@@ -308,7 +308,7 @@ final class TwoFactorTest extends TestCase
     }
 
     #[Test]
-    public function a_staff_member_whose_role_mandates_two_factor_is_blocked_until_they_enrol(): void
+    public function a_staff_member_whose_role_mandates_two_factor_can_still_sign_in_and_work(): void
     {
         $staff = Staff::factory()->create();
         $staff->assignRole(Role::FinanceManager->value);
@@ -318,17 +318,37 @@ final class TwoFactorTest extends TestCase
             'password' => StaffFactory::PASSWORD,
         ])->assertOk();
 
-        $this->assertSame('enrol_two_factor', $response->json('data.required_action'));
+        // Not a blocking step: no required_action, but the pending flag is set
+        // so the console can show its persistent banner.
+        $this->assertNull($response->json('data.required_action'));
+        $this->assertTrue($response->json('data.staff.two_factor.required'));
+        $this->assertFalse($response->json('data.staff.two_factor.enabled'));
+        $this->assertTrue($response->json('data.staff.two_factor.setup_pending'));
+
+        $token = $response->json('data.token');
+
+        // A normal authenticated request is no longer refused.
+        $this->tokenRequest($token, 'GET', '/api/v1/admin/account/sessions')->assertOk();
+    }
+
+    #[Test]
+    public function a_forced_password_change_still_blocks_everything_else(): void
+    {
+        $staff = Staff::factory()->create(['must_change_password' => true]);
+
+        $response = $this->postJson('/api/v1/admin/auth/login', [
+            'identifier' => $staff->email,
+            'password' => StaffFactory::PASSWORD,
+        ])->assertOk();
+
+        $this->assertSame('change_password', $response->json('data.required_action'));
 
         $token = $response->json('data.token');
 
         $blocked = $this->tokenRequest($token, 'GET', '/api/v1/admin/account/sessions')
             ->assertStatus(403);
 
-        $this->assertSame('enrol_two_factor', $blocked->headers->get('X-Naipay-Required-Action'));
-
-        // The enrolment endpoint itself stays reachable.
-        $this->tokenRequest($token, 'POST', '/api/v1/admin/auth/two-factor/enrol')->assertOk();
+        $this->assertSame('change_password', $blocked->headers->get('X-Naipay-Required-Action'));
     }
 
     #[Test]

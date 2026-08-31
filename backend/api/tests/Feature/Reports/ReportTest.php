@@ -68,6 +68,12 @@ final class ReportTest extends TestCase
         $this->assertSame(2, $response->json('data.loans.'.LoanStatus::Disbursed->value));
         $this->assertSame(1, $response->json('data.loans.'.LoanStatus::PendingApproval->value));
         $this->assertSame('80000.00', $response->json('data.loans.total_outstanding_principal'));
+
+        // Principal + interest: each disbursed loan carries 30,000 of factory
+        // interest, so outstanding is 80,000 + 60,000 and the contractual
+        // total is (150,000 + 30,000) * 2.
+        $this->assertSame('140000.00', $response->json('data.loans.total_outstanding'));
+        $this->assertSame('360000.00', $response->json('data.loans.total_principal_plus_interest'));
     }
 
     // --- Trial balance ---------------------------------------------------------------
@@ -142,9 +148,17 @@ final class ReportTest extends TestCase
         $response->assertOk();
         $this->assertSame('100000.00', $response->json('data.total_outstanding_principal'));
 
+        // Principal + interest: the two disbursed loans each carry 30,000 of
+        // interest (from the factory), so outstanding is 160,000 and the full
+        // contractual value is (150,000 + 30,000) * 2.
+        $this->assertSame('160000.00', $response->json('data.total_outstanding'));
+        $this->assertSame('360000.00', $response->json('data.total_principal_plus_interest'));
+
         $disbursedBucket = collect($response->json('data.by_status'))->firstWhere('status', LoanStatus::Disbursed->value);
         $this->assertSame(2, $disbursedBucket['count']);
         $this->assertSame('100000.00', $disbursedBucket['outstanding_principal']);
+        $this->assertSame('160000.00', $disbursedBucket['outstanding']);
+        $this->assertSame('360000.00', $disbursedBucket['principal_plus_interest']);
     }
 
     #[Test]
@@ -161,6 +175,9 @@ final class ReportTest extends TestCase
         $row = collect($response->json('data.by_product'))->firstWhere('name', 'Daily Flex');
         $this->assertNotNull($row);
         $this->assertSame('25000.00', $row['outstanding_principal']);
+        // Outstanding + the 30,000 factory interest; full value 150,000 + 30,000.
+        $this->assertSame('55000.00', $row['outstanding']);
+        $this->assertSame('180000.00', $row['principal_plus_interest']);
     }
 
     // --- Collections -------------------------------------------------------------------

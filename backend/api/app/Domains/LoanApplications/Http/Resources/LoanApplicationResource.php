@@ -67,6 +67,12 @@ final class LoanApplicationResource extends JsonResource
                 'merchant_number' => $application->merchant->merchant_number,
                 'full_name' => $application->merchant->fullName(),
                 'can_borrow' => $application->merchant->canBorrow(),
+                'account_number' => $application->merchant->relationLoaded('account') && $application->merchant->account !== null
+                    ? $application->merchant->account->account_number
+                    : null,
+                'account_number_formatted' => $application->merchant->relationLoaded('account') && $application->merchant->account !== null
+                    ? $application->merchant->account->formattedAccountNumber()
+                    : null,
             ] : null,
 
             'business' => $application->relationLoaded('business') && $application->business !== null ? [

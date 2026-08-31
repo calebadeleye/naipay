@@ -239,13 +239,22 @@ class Staff extends Authenticatable
     }
 
     /**
-     * True when the account must complete a step before it can be used
-     * normally — enrolling in two-factor, or changing an issued password.
+     * True when the account must complete a blocking step before it can be
+     * used normally. Only a forced password change qualifies: two-factor
+     * enrolment is nudged, not enforced.
      */
     public function hasOutstandingSecuritySteps(): bool
     {
-        return $this->must_change_password
-            || ($this->requiresTwoFactor() && ! $this->hasTwoFactorEnabled());
+        return $this->must_change_password;
+    }
+
+    /**
+     * True when the account's role mandates two-factor but it is not yet set
+     * up — the console shows a persistent banner, but the account still works.
+     */
+    public function twoFactorSetupPending(): bool
+    {
+        return $this->requiresTwoFactor() && ! $this->hasTwoFactorEnabled();
     }
 
     // --- Authorisation -----------------------------------------------------

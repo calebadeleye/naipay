@@ -13,7 +13,7 @@ import { QueryState } from '@/components/ui/query-state';
 import { TextareaField } from '@/components/ui/textarea';
 import { ActionButton, ReasonActionButton } from '@/components/ui/workflow-action';
 import { ReauthPrompt } from '@/components/auth/reauth-prompt';
-import { formatAmountString, formatDateTime, formatMoney } from '@/lib/format';
+import { formatAmountString, formatDateTime, formatMoney, merchantLabel } from '@/lib/format';
 import { useProtectedAction } from '@/lib/auth/use-reauthenticate';
 import {
   useApproveRepayment,
@@ -115,8 +115,8 @@ export default function RepaymentDetailPage() {
       {repayment ? (
         <div className="space-y-6">
           <PageHeader
-            title={repayment.repayment_reference}
-            description={repayment.merchant?.full_name}
+            title={merchantLabel(repayment.merchant)}
+            description={[repayment.merchant?.full_name, formatMoney(repayment.amount)].filter(Boolean).join(' · ')}
             actions={<Badge tone={statusTone[repayment.status]}>{repayment.status_label}</Badge>}
           />
 
@@ -168,7 +168,7 @@ export default function RepaymentDetailPage() {
                   value={
                     repayment.loan ? (
                       <Link href={`/loans/${repayment.loan.id}`} className="text-brand-700 hover:underline">
-                        {repayment.loan.loan_reference}
+                        View loan
                       </Link>
                     ) : null
                   }

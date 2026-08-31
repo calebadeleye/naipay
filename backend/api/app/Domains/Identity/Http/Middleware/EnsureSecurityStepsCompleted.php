@@ -11,12 +11,16 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Blocks a staff member from using the system until they have completed the
- * security steps their account requires — changing an issued password, or
- * enrolling in two-factor where their role makes it mandatory.
+ * Blocks a staff member from using the system until they have changed an
+ * issued password.
  *
- * Applied to every authenticated route except the handful needed to complete
- * those steps, so an operator is never locked out of the remedy itself.
+ * Two-factor enrolment is *not* enforced here: an account whose role makes 2FA
+ * mandatory can still sign in and work, and is instead nudged by a persistent
+ * banner in the console (see the admin app shell). Only the password change,
+ * which leaves a shared credential live until it is done, is a hard gate.
+ *
+ * Applied to every authenticated route except the handful needed to change the
+ * password, so an operator is never locked out of the remedy itself.
  */
 final class EnsureSecurityStepsCompleted
 {
@@ -33,13 +37,6 @@ final class EnsureSecurityStepsCompleted
                 'You must change your password before continuing.',
                 status: Response::HTTP_FORBIDDEN,
             )->withHeaders(['X-Naipay-Required-Action' => 'change_password']);
-        }
-
-        if ($staff->requiresTwoFactor() && ! $staff->hasTwoFactorEnabled()) {
-            return ApiResponse::error(
-                'Two-factor authentication is mandatory for your role. Set it up to continue.',
-                status: Response::HTTP_FORBIDDEN,
-            )->withHeaders(['X-Naipay-Required-Action' => 'enrol_two_factor']);
         }
 
         return $next($request);

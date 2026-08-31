@@ -76,6 +76,7 @@ export interface Loan {
     full_name: string;
     email: string | null;
     account_number: string | null;
+    account_number_formatted: string | null;
   } | null;
   business: { id: number; business_number: string; business_name: string } | null;
   loan_product: { id: number; code: string; name: string } | null;

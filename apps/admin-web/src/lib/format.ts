@@ -118,3 +118,34 @@ export function maskIdentityNumber(value: string | null | undefined): string {
 
   return `${value.slice(0, 2)}${'*'.repeat(value.length - 4)}${value.slice(-2)}`;
 }
+
+/** Groups a bare account number for display: 0123 456 789. */
+export function formatAccountNumber(value: string | null | undefined): string {
+  if (!value) return '—';
+
+  return value.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
+}
+
+/**
+ * How a merchant is identified in the UI: their generated account number,
+ * falling back to the `NPM-` onboarding reference for merchants not yet
+ * approved (who have no account).
+ */
+export function merchantLabel(
+  merchant:
+    | {
+        account_number_formatted?: string | null;
+        account_number?: string | null;
+        merchant_number?: string | null;
+        account?: { account_number_formatted?: string | null; account_number?: string | null } | null;
+      }
+    | null
+    | undefined,
+): string {
+  if (!merchant) return '—';
+
+  const formatted = merchant.account_number_formatted ?? merchant.account?.account_number_formatted ?? null;
+  const bare = merchant.account_number ?? merchant.account?.account_number ?? null;
+
+  return formatted || (bare ? formatAccountNumber(bare) : null) || merchant.merchant_number || '—';
+}

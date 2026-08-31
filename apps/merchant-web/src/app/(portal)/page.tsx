@@ -47,12 +47,10 @@ export default function DashboardPage() {
               <Card>
                 <h2 className="mb-1 text-sm font-semibold text-slate-900">Your next payment</h2>
                 <p className="text-sm text-slate-600">
-                  {formatMoney(summary.next_due.amount)} is due on {formatDate(summary.next_due.due_date)} for
-                  loan{' '}
+                  {formatMoney(summary.next_due.amount)} is due on {formatDate(summary.next_due.due_date)}.{' '}
                   <Link href={`/loans/${summary.next_due.loan_id}`} className="text-brand-700 hover:underline">
-                    {summary.next_due.loan_reference}
+                    View loan
                   </Link>
-                  .
                 </p>
 
                 {summary.pay_into ? (

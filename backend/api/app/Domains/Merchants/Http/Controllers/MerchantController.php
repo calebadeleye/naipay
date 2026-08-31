@@ -33,7 +33,7 @@ final class MerchantController
             // Identity numbers are deliberately absent: a searchable BVN would
             // let anyone with merchants.view confirm whether a given number is
             // registered, which is the permission's whole point to prevent.
-            searchable: ['merchant_number', 'first_name', 'last_name', 'phone', 'email'],
+            searchable: ['merchant_number', 'account.account_number', 'first_name', 'last_name', 'phone', 'email'],
             filters: [
                 'onboarding_status' => FilterType::In,
                 'merchant_status' => FilterType::In,
@@ -51,7 +51,7 @@ final class MerchantController
 
         $query = Merchant::query()
             ->visibleTo($actor)
-            ->with(['branch', 'assignedOfficer'])
+            ->with(['branch', 'assignedOfficer', 'account'])
             ->withCount('businesses');
 
         $merchants = QueryPipeline::for($request, $specification)->paginate($query);
@@ -72,7 +72,7 @@ final class MerchantController
         $merchant = $this->onboarding->create($request->validated(), $actor);
 
         return ApiResponse::created(
-            new MerchantResource($merchant->load(['branch', 'assignedOfficer']), detailed: true),
+            new MerchantResource($merchant->load(['branch', 'assignedOfficer', 'account']), detailed: true),
             "Merchant {$merchant->merchant_number} created as a draft.",
         );
     }
@@ -100,7 +100,7 @@ final class MerchantController
         $updated = $this->onboarding->update($merchant, $request->validated(), $actor);
 
         return ApiResponse::success(
-            new MerchantResource($updated->load(['branch', 'assignedOfficer']), detailed: true),
+            new MerchantResource($updated->load(['branch', 'assignedOfficer', 'account']), detailed: true),
             'Merchant updated.',
         );
     }

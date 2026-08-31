@@ -2,12 +2,14 @@
  * Identity contracts, mirroring the API's StaffResource.
  */
 
-export type RequiredAction = 'change_password' | 'enrol_two_factor' | null;
+export type RequiredAction = 'change_password' | null;
 
 export interface StaffTwoFactorState {
   enabled: boolean;
   /** True where the account's role or permissions make 2FA mandatory. */
   required: boolean;
+  /** Mandatory for this account but not yet set up — nudged, not enforced. */
+  setup_pending: boolean;
   confirmed_at: string | null;
 }
 

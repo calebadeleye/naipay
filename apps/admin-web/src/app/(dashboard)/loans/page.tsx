@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney, merchantLabel } from '@/lib/format';
 import { useLoans } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
 
@@ -51,7 +51,7 @@ export default function LoansPage() {
       <div className="flex flex-wrap gap-3">
         <Field
           label="Search"
-          placeholder="Account number, name, or loan reference"
+          placeholder="Account number or merchant name"
           value={search}
           onChange={(event) => {
             setPage(1);
@@ -77,7 +77,7 @@ export default function LoansPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                  <th className="px-4 py-3">Loan</th>
+                  <th className="px-4 py-3">Account</th>
                   <th className="px-4 py-3">Merchant</th>
                   <th className="px-4 py-3">Product</th>
                   <th className="px-4 py-3 text-right">Principal</th>
@@ -90,7 +90,7 @@ export default function LoansPage() {
                   <tr key={loan.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <Link href={`/loans/${loan.id}`} className="numeric font-medium text-brand-700 hover:underline">
-                        {loan.loan_reference}
+                        {merchantLabel(loan.merchant)}
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-slate-700">{loan.merchant?.full_name ?? '—'}</td>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 import { Card } from '@/components/ui/card';
@@ -31,7 +32,16 @@ export default function ReceiptDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <Detail label="Amount" value={formatMoney(receipt.amount)} />
               <Detail label="Issued" value={formatDate(receipt.issued_at)} />
-              <Detail label="Loan" value={receipt.loan?.loan_reference} />
+              <Detail
+                label="Loan"
+                value={
+                  receipt.loan ? (
+                    <Link href={`/loans/${receipt.loan.id}`} className="text-brand-700 hover:underline">
+                      View loan
+                    </Link>
+                  ) : null
+                }
+              />
               <Detail label="Business" value={receipt.business?.business_name} />
               {receipt.repayment ? (
                 <>

@@ -39,12 +39,9 @@ export default function ChangePasswordPage() {
       },
       {
         onSuccess: () => {
-          // The account may still owe two-factor enrolment, so the next
-          // destination is decided by the server on the following request
-          // rather than assumed here.
-          router.replace(staff?.two_factor.required && !staff.two_factor.enabled
-            ? '/two-factor/enrol'
-            : '/');
+          // Two-factor enrolment is nudged by a banner in the shell, not
+          // forced, so the operator goes straight to their work.
+          router.replace('/');
         },
       },
     );

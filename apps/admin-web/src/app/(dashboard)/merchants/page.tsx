@@ -12,7 +12,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
 import { useHasPermission } from '@/lib/auth/use-permission';
-import { formatDate } from '@/lib/format';
+import { formatDate, merchantLabel } from '@/lib/format';
 import { useMerchants } from '@/lib/merchants/use-merchants';
 import type { KycStatusKey, OnboardingStatusKey } from '@/lib/merchants/types';
 
@@ -77,7 +77,7 @@ export default function MerchantsPage() {
       <div className="flex flex-wrap gap-3">
         <Field
           label="Search"
-          placeholder="Name, phone, email or merchant number"
+          placeholder="Name, phone, email or account number"
           value={search}
           onChange={(event) => {
             setPage(1);
@@ -118,7 +118,7 @@ export default function MerchantsPage() {
                       <Link href={`/merchants/${merchant.id}`} className="font-medium text-brand-700 hover:underline">
                         {merchant.full_name}
                       </Link>
-                      <p className="numeric text-xs text-slate-500">{merchant.merchant_number}</p>
+                      <p className="numeric text-xs text-slate-500">{merchantLabel(merchant)}</p>
                     </td>
                     <td className="numeric px-4 py-3 text-slate-700">{merchant.phone}</td>
                     <td className="px-4 py-3">

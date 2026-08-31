@@ -17,6 +17,7 @@ import {
 import { useState, type ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
+import { merchantLabel } from '@/lib/format';
 import { useCurrentMerchant, useLogout } from '@/lib/auth/use-auth';
 
 const NAV_ITEMS = [
@@ -122,7 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {merchant ? (
               <div className="text-right">
                 <p className="text-sm font-medium text-slate-900">{merchant.full_name}</p>
-                <p className="text-xs text-slate-500">{merchant.merchant_number}</p>
+                <p className="text-xs text-slate-500">{merchantLabel(merchant)}</p>
               </div>
             ) : null}
 

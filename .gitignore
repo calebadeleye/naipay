@@ -56,3 +56,6 @@ coverage/
 .DS_Store
 Thumbs.db
 *.swp
+
+# --- Deployment --------------------------------------------------------
+infrastructure/deployment/deploy.env

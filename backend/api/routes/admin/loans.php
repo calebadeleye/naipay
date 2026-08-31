@@ -57,4 +57,11 @@ Route::middleware(['auth:staff', 'session.expiry', 'security.steps'])
             ->middleware('permission:'.Permission::LoansWriteOff->value)
             ->whereNumber('loan')
             ->name('write-off');
+
+        // Calendar-only shift of the repayment schedule (public holiday, or a
+        // merchant's request). Moves no money and changes no figures.
+        Route::post('{loan}/reschedule', [LoanController::class, 'reschedule'])
+            ->middleware('permission:'.Permission::LoansRestructure->value)
+            ->whereNumber('loan')
+            ->name('reschedule');
     });

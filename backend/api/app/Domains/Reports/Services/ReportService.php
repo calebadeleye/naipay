@@ -58,6 +58,14 @@ final class ReportService
                     'total_outstanding_principal' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_principal')->toDecimalString(),
                     'total_capital_disbursed' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'principal_amount')->toDecimalString(),
                     'total_expected_interest' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'total_interest')->toDecimalString(),
+                    // Principal + interest, as the credit team reads a book:
+                    // what is still owed, and the full contractual value.
+                    'total_outstanding' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_principal')
+                        ->plus($this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_interest'))
+                        ->toDecimalString(),
+                    'total_principal_plus_interest' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'principal_amount')
+                        ->plus($this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'total_interest'))
+                        ->toDecimalString(),
                 ],
             ),
 
@@ -151,20 +159,37 @@ final class ReportService
             ->join('loan_products', 'loan_products.id', '=', 'loans.loan_product_id')
             ->where('loans.status', LoanStatus::Disbursed->value)
             ->groupBy('loan_products.id', 'loan_products.name')
-            ->select(['loan_products.id', 'loan_products.name', DB::raw('COUNT(*) as count'), DB::raw('SUM(loans.outstanding_principal) as outstanding')])
+            ->select([
+                'loan_products.id',
+                'loan_products.name',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(loans.outstanding_principal) as outstanding'),
+                DB::raw('SUM(loans.outstanding_principal + loans.outstanding_interest) as outstanding_with_interest'),
+                DB::raw('SUM(loans.principal_amount + loans.total_interest) as principal_plus_interest'),
+            ])
             ->get()
             ->map(fn ($row): array => [
                 'loan_product_id' => $row->id,
                 'name' => $row->name,
                 'count' => (int) $row->count,
                 'outstanding_principal' => Money::fromDecimal((string) $row->outstanding)->toDecimalString(),
+                'outstanding' => Money::fromDecimal((string) $row->outstanding_with_interest)->toDecimalString(),
+                'principal_plus_interest' => Money::fromDecimal((string) $row->principal_plus_interest)->toDecimalString(),
             ])
             ->all();
+
+        $disbursed = fn () => Loan::query()->where('status', LoanStatus::Disbursed->value);
 
         return [
             'by_status' => $byStatus,
             'by_product' => $byProduct,
-            'total_outstanding_principal' => $this->sumMoney(Loan::query()->where('status', LoanStatus::Disbursed->value), 'outstanding_principal')->toDecimalString(),
+            'total_outstanding_principal' => $this->sumMoney($disbursed(), 'outstanding_principal')->toDecimalString(),
+            'total_outstanding' => $this->sumMoney($disbursed(), 'outstanding_principal')
+                ->plus($this->sumMoney($disbursed(), 'outstanding_interest'))
+                ->toDecimalString(),
+            'total_principal_plus_interest' => $this->sumMoney($disbursed(), 'principal_amount')
+                ->plus($this->sumMoney($disbursed(), 'total_interest'))
+                ->toDecimalString(),
         ];
     }
 
@@ -363,7 +388,13 @@ final class ReportService
     {
         $rows = Loan::query()
             ->groupBy($column)
-            ->select($column, DB::raw('COUNT(*) as aggregate'), DB::raw('SUM(outstanding_principal) as outstanding'))
+            ->select(
+                $column,
+                DB::raw('COUNT(*) as aggregate'),
+                DB::raw('SUM(outstanding_principal) as outstanding'),
+                DB::raw('SUM(outstanding_principal + outstanding_interest) as outstanding_with_interest'),
+                DB::raw('SUM(principal_amount + total_interest) as principal_plus_interest'),
+            )
             ->get()
             ->keyBy($column);
 
@@ -377,6 +408,12 @@ final class ReportService
                 'count' => $row !== null ? (int) $row->aggregate : 0,
                 'outstanding_principal' => $row !== null && $row->outstanding !== null
                     ? Money::fromDecimal((string) $row->outstanding)->toDecimalString()
+                    : '0.00',
+                'outstanding' => $row !== null && $row->outstanding_with_interest !== null
+                    ? Money::fromDecimal((string) $row->outstanding_with_interest)->toDecimalString()
+                    : '0.00',
+                'principal_plus_interest' => $row !== null && $row->principal_plus_interest !== null
+                    ? Money::fromDecimal((string) $row->principal_plus_interest)->toDecimalString()
                     : '0.00',
             ];
         }

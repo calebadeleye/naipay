@@ -12,7 +12,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { SelectField } from '@/components/ui/select';
 import { useHasPermission } from '@/lib/auth/use-permission';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney, merchantLabel } from '@/lib/format';
 import { useRepayments } from '@/lib/repayments/use-repayments';
 import type { RepaymentStatusKey } from '@/lib/repayments/types';
 
@@ -63,7 +63,7 @@ export default function RepaymentsPage() {
       <div className="flex flex-wrap gap-3">
         <Field
           label="Search"
-          placeholder="Account number, name, or reference"
+          placeholder="Account number or merchant name"
           value={search}
           onChange={(event) => {
             setPage(1);
@@ -89,7 +89,7 @@ export default function RepaymentsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                  <th className="px-4 py-3">Repayment</th>
+                  <th className="px-4 py-3">Account</th>
                   <th className="px-4 py-3">Merchant</th>
                   <th className="px-4 py-3">Loan</th>
                   <th className="px-4 py-3 text-right">Amount</th>
@@ -105,11 +105,19 @@ export default function RepaymentsPage() {
                         href={`/repayments/${repayment.id}`}
                         className="numeric font-medium text-brand-700 hover:underline"
                       >
-                        {repayment.repayment_reference}
+                        {merchantLabel(repayment.merchant)}
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-slate-700">{repayment.merchant?.full_name ?? '—'}</td>
-                    <td className="numeric px-4 py-3 text-slate-700">{repayment.loan?.loan_reference ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {repayment.loan ? (
+                        <Link href={`/loans/${repayment.loan.id}`} className="text-brand-700 hover:underline">
+                          View loan
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="numeric px-4 py-3 text-right text-slate-700">{formatMoney(repayment.amount)}</td>
                     <td className="px-4 py-3">
                       <Badge tone={statusTone[repayment.status]}>{repayment.status_label}</Badge>

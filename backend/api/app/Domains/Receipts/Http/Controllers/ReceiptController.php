@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 
 final class ReceiptController
 {
-    private const RELATIONS = ['repayment', 'loan', 'merchant', 'business'];
+    private const RELATIONS = ['repayment', 'loan', 'merchant.account', 'business'];
 
     public function index(Request $request): JsonResponse
     {
@@ -36,7 +36,7 @@ final class ReceiptController
 
         $query = Receipt::query()
             ->whereHas('loan', fn ($q) => $q->visibleTo($actor))
-            ->with(['merchant', 'loan']);
+            ->with(['merchant.account', 'loan']);
 
         $receipts = QueryPipeline::for($request, $specification)->paginate($query);
 

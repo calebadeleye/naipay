@@ -1,11 +1,17 @@
+@php
+    $accountNumber = $loan->merchant?->account?->formattedAccountNumber() ?? $loan->loan_reference;
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{{ $loan->loan_reference }} — Repayment schedule</title>
+    <title>{{ $accountNumber }} — Repayment schedule</title>
     <style>
         @page { margin: 32px 36px; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #1e293b; }
+        /* DejaVu Sans (bundled with dompdf) is the only built-in font with a
+           Naira (₦, U+20A6) glyph — Helvetica/Arial are AFM Latin-1 and render
+           it as "?". */
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #1e293b; }
         .header { display: table; width: 100%; margin-bottom: 18px; }
         .brand { font-size: 18px; font-weight: bold; color: #0f172a; }
         .tagline { font-size: 10px; color: #64748b; }
@@ -42,7 +48,7 @@
         <div class="tagline">{{ config('naipay.brand.legal_name') }}</div>
     </div>
 
-    <h1>Repayment schedule — {{ $loan->loan_reference }}</h1>
+    <h1>Repayment schedule — {{ $accountNumber }}</h1>
 
     <table class="meta">
         <tr>
@@ -50,6 +56,12 @@
             <td>{{ $loan->merchant?->fullName() ?? '—' }}</td>
             <td class="label">Principal</td>
             <td>{{ $loan->principal_amount->format() }}</td>
+        </tr>
+        <tr>
+            <td class="label">Account number</td>
+            <td>{{ $loan->merchant?->account?->formattedAccountNumber() ?? '—' }}</td>
+            <td class="label"></td>
+            <td></td>
         </tr>
         <tr>
             <td class="label">Business</td>

@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiError } from '@naipay/api-client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -15,7 +16,8 @@ import { TextareaField } from '@/components/ui/textarea';
 import { ActionButton } from '@/components/ui/workflow-action';
 import { ReauthPrompt } from '@/components/auth/reauth-prompt';
 import { useBankAccountOptions } from '@/lib/bank-accounts/use-bank-accounts';
-import { formatAmountString, formatDate, formatDateTime, formatMoney } from '@/lib/format';
+import { formatAmountString, formatDate, formatDateTime, formatMoney, merchantLabel } from '@/lib/format';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { useProtectedAction } from '@/lib/auth/use-reauthenticate';
 import {
   useApproveLoan,
@@ -23,6 +25,7 @@ import {
   useDownloadLoanSchedulePdf,
   useEmailLoanSchedule,
   useLoan,
+  useRescheduleLoan,
   useWriteOffLoan,
 } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
@@ -178,16 +181,87 @@ function WriteOffAction({ loanId }: { loanId: number }) {
   );
 }
 
+function RescheduleAction({ loanId }: { loanId: number }) {
+  const [open, setOpen] = useState(false);
+  const [nextDueDate, setNextDueDate] = useState('');
+  const [reason, setReason] = useState('');
+  const reschedule = useRescheduleLoan(loanId);
+  const error = reschedule.error instanceof ApiError ? reschedule.error : null;
+
+  async function submit() {
+    try {
+      await reschedule.mutateAsync({ next_due_date: nextDueDate, reason });
+      setOpen(false);
+      setNextDueDate('');
+      setReason('');
+    } catch {
+      // Surfaced through `error` from the mutation state.
+    }
+  }
+
+  if (!open) {
+    return (
+      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+        Reschedule
+      </Button>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-md space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+      {error && !error.isValidation ? (
+        <Alert tone="error" reference={error.correlationId}>
+          {error.message}
+        </Alert>
+      ) : null}
+
+      <p className="text-xs text-slate-500">
+        Every unpaid instalment shifts by the same number of days. Amounts, interest and the loan
+        totals do not change.
+      </p>
+
+      <Field
+        label="New date for the next instalment"
+        type="date"
+        value={nextDueDate}
+        onChange={(event) => setNextDueDate(event.target.value)}
+        error={error?.fieldError('next_due_date')}
+      />
+      <TextareaField
+        label="Reason"
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        hint="At least 10 characters. Recorded in the audit log."
+        error={error?.fieldError('reason')}
+      />
+
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          loading={reschedule.isPending}
+          disabled={!nextDueDate || reason.trim().length < 10}
+          onClick={submit}
+        >
+          Confirm reschedule
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ScheduleActions({
   loanId,
-  loanReference,
+  filenameBase,
   merchantEmail,
 }: {
   loanId: number;
-  loanReference: string;
+  filenameBase: string;
   merchantEmail: string | null | undefined;
 }) {
-  const downloadPdf = useDownloadLoanSchedulePdf(loanId, loanReference);
+  const downloadPdf = useDownloadLoanSchedulePdf(loanId, filenameBase);
   const emailSchedule = useEmailLoanSchedule(loanId);
 
   return (
@@ -228,14 +302,15 @@ export default function LoanDetailPage() {
 
   const { data: loan, isLoading, error } = useLoan(id);
   const approveLoan = useApproveLoan(id);
+  const canReschedule = useHasPermission('loans.restructure');
 
   return (
     <QueryState isLoading={isLoading} error={error}>
       {loan ? (
         <div className="space-y-6">
           <PageHeader
-            title={loan.loan_reference}
-            description={loan.merchant?.full_name}
+            title={merchantLabel(loan.merchant)}
+            description={[loan.merchant?.full_name, loan.loan_product?.name].filter(Boolean).join(' · ')}
             actions={<Badge tone={statusTone[loan.status]}>{loan.status_label}</Badge>}
           />
 
@@ -247,6 +322,7 @@ export default function LoanDetailPage() {
               ) : null}
               {loan.allowed_transitions.includes('disbursed') ? <DisburseAction loanId={loan.id} /> : null}
               {loan.allowed_transitions.includes('written_off') ? <WriteOffAction loanId={loan.id} /> : null}
+              {loan.status === 'disbursed' && canReschedule ? <RescheduleAction loanId={loan.id} /> : null}
               {loan.allowed_transitions.length === 0 ? (
                 <p className="text-sm text-slate-500">No further transitions — this loan is in a terminal state.</p>
               ) : null}
@@ -350,7 +426,11 @@ export default function LoanDetailPage() {
           {loan.schedule.length > 0 ? (
             <Card className="overflow-x-auto p-0">
               <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900">Repayment schedule</h2>
-              <ScheduleActions loanId={loan.id} loanReference={loan.loan_reference} merchantEmail={loan.merchant?.email} />
+              <ScheduleActions
+                loanId={loan.id}
+                filenameBase={`repayment-schedule-${loan.merchant?.account_number ?? loan.loan_reference}`}
+                merchantEmail={loan.merchant?.email}
+              />
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">

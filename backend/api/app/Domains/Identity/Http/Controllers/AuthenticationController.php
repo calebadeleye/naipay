@@ -137,13 +137,11 @@ final class AuthenticationController
                 'token_type' => 'Bearer',
                 'expires_in' => (int) config('naipay.security.token_lifetime_minutes', 480) * 60,
                 'staff' => new StaffResource($staff),
-                // Surfaced so the console can route straight to the step that
-                // must be completed before anything else will succeed.
-                'required_action' => match (true) {
-                    $staff->must_change_password => 'change_password',
-                    $staff->requiresTwoFactor() && ! $staff->hasTwoFactorEnabled() => 'enrol_two_factor',
-                    default => null,
-                },
+                // A blocking step the console must route to before anything
+                // else will succeed. Two-factor enrolment is deliberately not
+                // one of these any more — it is a non-blocking nudge, surfaced
+                // from `staff.two_factor` (required && ! enabled).
+                'required_action' => $staff->must_change_password ? 'change_password' : null,
             ],
             message: 'Signed in successfully.',
         );

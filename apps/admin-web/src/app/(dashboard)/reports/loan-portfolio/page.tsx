@@ -27,10 +27,20 @@ export default function LoanPortfolioPage() {
       <QueryState isLoading={isLoading} error={error}>
         {data ? (
           <div className="space-y-6">
-            <StatCard
-              label="Total outstanding principal"
-              value={formatAmountString(data.total_outstanding_principal)}
-            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatCard
+                label="Total outstanding principal"
+                value={formatAmountString(data.total_outstanding_principal)}
+              />
+              <StatCard
+                label="Outstanding (principal + interest)"
+                value={formatAmountString(data.total_outstanding)}
+              />
+              <StatCard
+                label="Principal + interest (contractual)"
+                value={formatAmountString(data.total_principal_plus_interest)}
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card className="overflow-x-auto p-0">
@@ -43,6 +53,7 @@ export default function LoanPortfolioPage() {
                       <th className="px-4 py-2">Status</th>
                       <th className="px-4 py-2 text-right">Loans</th>
                       <th className="px-4 py-2 text-right">Outstanding</th>
+                      <th className="px-4 py-2 text-right">Outstanding (P+I)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -54,8 +65,11 @@ export default function LoanPortfolioPage() {
                         <td className="numeric px-4 py-2.5 text-right text-slate-700">
                           {formatNumber(row.count)}
                         </td>
-                        <td className="numeric px-4 py-2.5 text-right font-medium text-slate-900">
+                        <td className="numeric px-4 py-2.5 text-right text-slate-700">
                           {formatAmountString(row.outstanding_principal)}
+                        </td>
+                        <td className="numeric px-4 py-2.5 text-right font-medium text-slate-900">
+                          {formatAmountString(row.outstanding)}
                         </td>
                       </tr>
                     ))}
@@ -78,6 +92,7 @@ export default function LoanPortfolioPage() {
                         <th className="px-4 py-2">Product</th>
                         <th className="px-4 py-2 text-right">Loans</th>
                         <th className="px-4 py-2 text-right">Outstanding</th>
+                        <th className="px-4 py-2 text-right">Outstanding (P+I)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -87,8 +102,11 @@ export default function LoanPortfolioPage() {
                           <td className="numeric px-4 py-2.5 text-right text-slate-700">
                             {formatNumber(row.count)}
                           </td>
-                          <td className="numeric px-4 py-2.5 text-right font-medium text-slate-900">
+                          <td className="numeric px-4 py-2.5 text-right text-slate-700">
                             {formatAmountString(row.outstanding_principal)}
+                          </td>
+                          <td className="numeric px-4 py-2.5 text-right font-medium text-slate-900">
+                            {formatAmountString(row.outstanding)}
                           </td>
                         </tr>
                       ))}

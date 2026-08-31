@@ -40,6 +40,10 @@ export interface DashboardSummary {
     total_outstanding_principal: string;
     total_capital_disbursed: string;
     total_expected_interest: string;
+    /** Remaining principal + remaining interest, disbursed loans. */
+    total_outstanding: string;
+    /** Original principal + total contractual interest, disbursed loans. */
+    total_principal_plus_interest: string;
   };
   repayments: {
     pending_verification: number;
@@ -70,6 +74,10 @@ export interface LoanPortfolioByStatus {
   status: LoanStatusKey;
   count: number;
   outstanding_principal: string;
+  /** Remaining principal + remaining interest. */
+  outstanding: string;
+  /** Original principal + total contractual interest. */
+  principal_plus_interest: string;
 }
 
 export interface LoanPortfolioByProduct {
@@ -77,12 +85,16 @@ export interface LoanPortfolioByProduct {
   name: string;
   count: number;
   outstanding_principal: string;
+  outstanding: string;
+  principal_plus_interest: string;
 }
 
 export interface LoanPortfolio {
   by_status: LoanPortfolioByStatus[];
   by_product: LoanPortfolioByProduct[];
   total_outstanding_principal: string;
+  total_outstanding: string;
+  total_principal_plus_interest: string;
 }
 
 export interface CollectionsReport {

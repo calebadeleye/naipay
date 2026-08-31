@@ -51,11 +51,18 @@ final class LoanScheduleNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $this->loan->loadMissing('merchant.account');
+        $account = $this->loan->merchant?->account?->formattedAccountNumber();
+
         return (new MailMessage)
-            ->subject("Your repayment schedule — {$this->loan->loan_reference}")
+            ->subject('Your repayment schedule'.($account !== null ? " — {$account}" : ''))
             ->greeting("Hello {$notifiable->fullName()},")
-            ->line("Attached is the repayment schedule for your loan {$this->loan->loan_reference}.")
-            ->attachData(base64_decode($this->encodedPdf), $this->filename, ['mime' => 'application/pdf'])
+            ->line(
+                $account !== null
+                    ? "Attached is the repayment schedule for the loan on account {$account}."
+                    : 'Attached is the repayment schedule for your loan.',
+            )
+            ->attachData(base64_decode($this->encodedPdf, true), $this->filename, ['mime' => 'application/pdf'])
             ->salutation('Every Merchant');
     }
 }

@@ -13,7 +13,10 @@ import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
 import { ActionButton, ReasonActionButton } from '@/components/ui/workflow-action';
 import { useHasPermission } from '@/lib/auth/use-permission';
-import { formatDateTime, formatMoney, maskIdentityNumber } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney, maskIdentityNumber, merchantLabel } from '@/lib/format';
+import { useLoanApplications } from '@/lib/loan-applications/use-loan-applications';
+import { useLoans } from '@/lib/loans/use-loans';
+import { useRepayments } from '@/lib/repayments/use-repayments';
 import {
   useApproveMerchant,
   useMerchant,
@@ -51,6 +54,143 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">{label}</p>
       <p className="mt-0.5 text-sm text-slate-900">{value ?? '—'}</p>
+    </div>
+  );
+}
+
+/**
+ * Everything a merchant has running, on the merchant's own page: their loans,
+ * recent repayments and applications, each linking straight through — and the
+ * "start a new one" actions — so staff don't have to leave for the Loans or
+ * Repayments sections and filter back down to this person.
+ */
+function MerchantActivity({ merchantId }: { merchantId: number }) {
+  const canViewLoans = useHasPermission('loans.view');
+  const canViewRepayments = useHasPermission('repayments.view');
+  const canViewApplications = useHasPermission('loan_applications.view');
+  const canCreateApplication = useHasPermission('loan_applications.create');
+  const canRecordRepayment = useHasPermission('repayments.record');
+
+  const loans = useLoans(canViewLoans ? { merchant_id: merchantId, per_page: 10 } : undefined);
+  const repayments = useRepayments(
+    canViewRepayments ? { merchant_id: merchantId, per_page: 5, sort: '-payment_date' } : undefined,
+  );
+  const applications = useLoanApplications(
+    canViewApplications ? { merchant_id: merchantId, per_page: 5, sort: '-created_at' } : undefined,
+  );
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {canViewLoans ? (
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Loans</h2>
+            {canCreateApplication ? (
+              <Link
+                href={`/loan-applications/new?merchant=${merchantId}`}
+                className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+              >
+                New loan application
+              </Link>
+            ) : null}
+          </div>
+          {loans.data && loans.data.items.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {loans.data.items.map((loan) => (
+                <div key={loan.id} className="flex items-center justify-between gap-3 py-3">
+                  <div>
+                    <Link href={`/loans/${loan.id}`} className="font-medium text-brand-700 hover:underline">
+                      {loan.loan_product?.name ?? 'Loan'}
+                    </Link>
+                    <p className="numeric text-xs text-slate-500">
+                      {formatMoney(loan.terms.principal_amount)}
+                      {loan.outstanding ? ` · ${formatMoney(loan.outstanding.principal)} outstanding` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={loan.status === 'disbursed' ? 'success' : loan.status === 'written_off' ? 'danger' : 'info'}>
+                      {loan.status_label}
+                    </Badge>
+                    {canRecordRepayment && loan.status === 'disbursed' ? (
+                      <Link
+                        href={`/repayments/new?loan=${loan.id}`}
+                        className="text-xs font-medium text-brand-700 hover:underline"
+                      >
+                        Record repayment
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No loans for this merchant yet.</p>
+          )}
+        </Card>
+      ) : null}
+
+      {canViewRepayments ? (
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Recent repayments</h2>
+            {canRecordRepayment ? (
+              <Link href="/repayments/new" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+                Record repayment
+              </Link>
+            ) : null}
+          </div>
+          {repayments.data && repayments.data.items.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {repayments.data.items.map((repayment) => (
+                <Link
+                  key={repayment.id}
+                  href={`/repayments/${repayment.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-slate-50"
+                >
+                  <div>
+                    <p className="numeric font-medium text-slate-900">{formatMoney(repayment.amount)}</p>
+                    <p className="text-xs text-slate-500">{formatDate(repayment.payment_date)}</p>
+                  </div>
+                  <Badge tone={repayment.status === 'approved' ? 'success' : repayment.status === 'rejected' ? 'danger' : 'info'}>
+                    {repayment.status_label}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No repayments recorded for this merchant yet.</p>
+          )}
+        </Card>
+      ) : null}
+
+      {canViewApplications ? (
+        <Card>
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">Loan applications</h2>
+          {applications.data && applications.data.items.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {applications.data.items.map((application) => (
+                <Link
+                  key={application.id}
+                  href={`/loan-applications/${application.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-slate-50"
+                >
+                  <div>
+                    <p className="numeric font-medium text-slate-900">
+                      {formatMoney(application.requested.amount)}
+                    </p>
+                    <p className="text-xs text-slate-500">{formatDate(application.created_at)}</p>
+                  </div>
+                  <Badge tone={application.status === 'approved' ? 'success' : application.status === 'rejected' ? 'danger' : 'info'}>
+                    {application.status_label}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No loan applications for this merchant yet.</p>
+          )}
+        </Card>
+      ) : null}
     </div>
   );
 }
@@ -124,7 +264,7 @@ export default function MerchantDetailPage() {
         <div className="space-y-6">
           <PageHeader
             title={merchant.full_name}
-            description={`${merchant.merchant_number} · ${merchant.phone}`}
+            description={`${merchantLabel(merchant)} · ${merchant.phone}`}
             actions={
               <div className="flex items-center gap-2">
                 <Badge tone={onboardingTone[merchant.onboarding_status]}>
@@ -411,6 +551,8 @@ export default function MerchantDetailPage() {
               <p className="text-sm text-slate-500">No businesses registered for this merchant yet.</p>
             )}
           </Card>
+
+          <MerchantActivity merchantId={merchant.id} />
 
           <p className="text-xs text-slate-400">Last updated {formatDateTime(merchant.updated_at)}</p>
         </div>

@@ -16,6 +16,12 @@ export interface Receipt {
   } | null;
 
   loan: { id: number; loan_reference: string } | null;
-  merchant: { id: number; merchant_number: string; full_name: string } | null;
+  merchant: {
+    id: number;
+    merchant_number: string;
+    full_name: string;
+    account_number: string | null;
+    account_number_formatted: string | null;
+  } | null;
   business: { id: number; business_name: string } | null;
 }

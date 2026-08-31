@@ -43,6 +43,12 @@ final class ReceiptResource extends JsonResource
                 'id' => $receipt->merchant->id,
                 'merchant_number' => $receipt->merchant->merchant_number,
                 'full_name' => $receipt->merchant->fullName(),
+                'account_number' => $receipt->merchant->relationLoaded('account') && $receipt->merchant->account !== null
+                    ? $receipt->merchant->account->account_number
+                    : null,
+                'account_number_formatted' => $receipt->merchant->relationLoaded('account') && $receipt->merchant->account !== null
+                    ? $receipt->merchant->account->formattedAccountNumber()
+                    : null,
             ] : null,
 
             'business' => $receipt->relationLoaded('business') && $receipt->business !== null ? [

@@ -33,17 +33,14 @@ export function useCurrentStaff() {
 /**
  * Where to send an operator once they hold a token.
  *
- * A forced password change or mandatory two-factor enrolment must be resolved
- * before anything else will succeed, so the destination is decided by the API's
- * `required_action` rather than assumed.
+ * A forced password change must be resolved before anything else will
+ * succeed, so the destination is decided by the API's `required_action`.
+ * Mandatory-but-missing two-factor is only a nudge now — a banner in the
+ * shell, not a redirect.
  */
 export function destinationFor(session: SessionPayload, returnTo?: string | null): string {
   if (session.required_action === 'change_password') {
     return '/change-password';
-  }
-
-  if (session.required_action === 'enrol_two_factor') {
-    return '/two-factor/enrol';
   }
 
   // An open redirect would let a phishing link bounce a freshly signed-in

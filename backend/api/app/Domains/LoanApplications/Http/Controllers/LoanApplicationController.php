@@ -24,7 +24,7 @@ use Illuminate\Http\Request;
 
 final class LoanApplicationController
 {
-    private const RELATIONS = ['merchant', 'business', 'loanProduct', 'branch', 'createdBy', 'assessedBy', 'recommendedBy', 'guarantors'];
+    private const RELATIONS = ['merchant.account', 'business', 'loanProduct', 'branch', 'createdBy', 'assessedBy', 'recommendedBy', 'guarantors'];
 
     public function __construct(
         private readonly LoanApplicationService $applications,
@@ -52,7 +52,7 @@ final class LoanApplicationController
 
         $query = LoanApplication::query()
             ->visibleTo($actor)
-            ->with(['merchant', 'business', 'loanProduct']);
+            ->with(['merchant.account', 'business', 'loanProduct']);
 
         $applications = QueryPipeline::for($request, $specification)->paginate($query);
 

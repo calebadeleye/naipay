@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, ShieldAlert, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 import { visibleNavSections } from '@/components/layout/nav-config';
@@ -11,6 +11,30 @@ import type { NavSection } from '@/components/layout/nav-config';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { useCurrentStaff, useLogout } from '@/lib/auth/use-auth';
 import { cn } from '@/lib/cn';
+
+/**
+ * Two-factor is mandatory for privileged roles but no longer blocks sign-in —
+ * this strip nags, conspicuously and on every screen, until it is set up.
+ */
+function TwoFactorSetupBanner() {
+  return (
+    <div className="sticky top-16 z-10 border-b border-amber-300 bg-amber-50 px-6 py-3 text-amber-900">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <ShieldAlert className="size-5 shrink-0 text-amber-600" aria-hidden />
+        <span className="font-semibold">Two-factor authentication is not set up.</span>
+        <span className="text-amber-800">
+          Your role requires it. Your account still works, but please secure it now.
+        </span>
+        <Link
+          href="/two-factor/enrol"
+          className="ml-auto rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+        >
+          Set up two-factor
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 function NavContent({
   navSections,
@@ -163,6 +187,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
+
+        {staff?.two_factor.setup_pending ? <TwoFactorSetupBanner /> : null}
 
         <main className="glass-scrim flex-1 px-6 py-8">
           <div className="mx-auto max-w-6xl space-y-6">{children}</div>

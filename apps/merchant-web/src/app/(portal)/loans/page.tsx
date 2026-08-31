@@ -10,7 +10,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { QueryState } from '@/components/ui/query-state';
 import { useLoanList } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
-import { formatMoney } from '@/lib/format';
+import { formatDate, formatMoney } from '@/lib/format';
 
 const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   pending_approval: 'neutral',
@@ -34,6 +34,7 @@ export default function LoansPage() {
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                   <th className="px-4 py-3">Loan</th>
+                  <th className="px-4 py-3">Taken</th>
                   <th className="px-4 py-3">Principal</th>
                   <th className="px-4 py-3">Outstanding</th>
                   <th className="px-4 py-3">Status</th>
@@ -43,10 +44,12 @@ export default function LoansPage() {
                 {data.items.map((loan) => (
                   <tr key={loan.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link href={`/loans/${loan.id}`} className="numeric font-medium text-brand-700 hover:underline">
-                        {loan.loan_reference}
+                      <Link href={`/loans/${loan.id}`} className="font-medium text-brand-700 hover:underline">
+                        {loan.loan_product?.name ?? 'Loan'}
                       </Link>
-                      <p className="text-xs text-slate-500">{loan.loan_product?.name ?? '—'}</p>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {formatDate(loan.disbursement?.date ?? loan.created_at)}
                     </td>
                     <td className="numeric px-4 py-3 text-slate-700">{formatMoney(loan.terms.principal_amount)}</td>
                     <td className="numeric px-4 py-3 text-slate-700">
@@ -59,7 +62,7 @@ export default function LoansPage() {
                 ))}
                 {data.items.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
+                    <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                       You have no loans yet.
                     </td>
                   </tr>

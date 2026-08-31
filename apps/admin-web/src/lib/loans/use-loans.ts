@@ -64,18 +64,35 @@ export function useWriteOffLoan(id: number | string) {
 }
 
 /**
+ * Shifts the repayment schedule to new dates (public holiday, or a merchant's
+ * request). Amounts and interest are untouched — only the dates move.
+ */
+export function useRescheduleLoan(id: number | string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { next_due_date: string; reason: string }) =>
+      api.post<Loan>(`/admin/loans/${id}/reschedule`, input),
+    onSuccess: (loan) => {
+      queryClient.setQueryData(loanKeys.detail(id), loan);
+      void queryClient.invalidateQueries({ queryKey: ['loans', 'list'] });
+    },
+  });
+}
+
+/**
  * Downloads the repayment schedule PDF and hands it straight to the
  * browser's save flow — the API client's `download()` already attaches the
  * bearer token a plain `<a href>` couldn't.
  */
-export function useDownloadLoanSchedulePdf(id: number | string, loanReference: string) {
+export function useDownloadLoanSchedulePdf(id: number | string, filenameBase: string) {
   return useMutation({
     mutationFn: () => api.download(`/admin/loans/${id}/schedule/pdf`),
     onSuccess: (blob) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${loanReference}-schedule.pdf`;
+      link.download = `${filenameBase}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();

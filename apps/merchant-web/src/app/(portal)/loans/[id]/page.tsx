@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
 import { useLoan, downloadLoanSchedule } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
+import { useCurrentMerchant } from '@/lib/auth/use-auth';
 import { formatAmountString, formatDate, formatMoney } from '@/lib/format';
 
 const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -34,6 +35,7 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
 export default function LoanDetailPage() {
   const params = useParams<{ id: string }>();
   const { data: loan, isLoading, error } = useLoan(params.id);
+  const { data: merchant } = useCurrentMerchant();
 
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -45,7 +47,10 @@ export default function LoanDetailPage() {
     setDownloadError(null);
 
     try {
-      await downloadLoanSchedule(loan.id, loan.loan_reference);
+      await downloadLoanSchedule(
+        loan.id,
+        `repayment-schedule-${merchant?.account?.account_number ?? loan.id}`,
+      );
     } catch (err) {
       setDownloadError(err instanceof ApiError ? err.message : 'Could not download the schedule.');
     } finally {
@@ -58,8 +63,10 @@ export default function LoanDetailPage() {
       {loan ? (
         <div className="space-y-6">
           <PageHeader
-            title={loan.loan_reference}
-            description={loan.loan_product?.name ?? undefined}
+            title={loan.loan_product?.name ?? 'Loan'}
+            description={
+              loan.disbursement?.date ? `Taken ${formatDate(loan.disbursement.date)}` : undefined
+            }
             actions={
               <div className="flex items-center gap-3">
                 <Badge tone={statusTone[loan.status]}>{loan.status_label}</Badge>

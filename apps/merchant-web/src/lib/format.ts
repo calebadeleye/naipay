@@ -43,6 +43,37 @@ export function formatAmountString(amount: string, currency = 'NGN'): string {
   return `${negative ? '-' : ''}${symbol}${grouped}.${minor.padEnd(2, '0').slice(0, 2)}`;
 }
 
+/** Groups a bare account number for display: 0123 456 789. */
+export function formatAccountNumber(value: string | null | undefined): string {
+  if (!value) return '—';
+
+  return value.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
+}
+
+/**
+ * How the merchant is identified in the portal: their account number, falling
+ * back to the onboarding reference for the (rare) window before an account
+ * exists.
+ */
+export function merchantLabel(
+  merchant:
+    | {
+        account?: { account_number_formatted?: string | null; account_number?: string | null } | null;
+        merchant_number?: string | null;
+      }
+    | null
+    | undefined,
+): string {
+  if (!merchant) return '—';
+
+  return (
+    merchant.account?.account_number_formatted ||
+    (merchant.account?.account_number ? formatAccountNumber(merchant.account.account_number) : null) ||
+    merchant.merchant_number ||
+    '—'
+  );
+}
+
 /** Day only — payment dates, due dates. */
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';

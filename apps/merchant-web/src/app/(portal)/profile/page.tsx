@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
+import { merchantLabel } from '@/lib/format';
 import { useCurrentMerchant } from '@/lib/auth/use-auth';
 import type { Business, Merchant } from '@/lib/auth/types';
 import { useUpdateBusiness, useUpdateProfile, type MerchantSelfFormInput } from '@/lib/profile/use-profile';
@@ -118,7 +119,7 @@ export default function ProfilePage() {
         <div className="space-y-6">
           <PageHeader
             title="Your profile"
-            description={`${merchant.merchant_number} · ${merchant.email ?? 'No email on file'}`}
+            description={`${merchantLabel(merchant)} · ${merchant.email ?? 'No email on file'}`}
             actions={
               !editing ? (
                 <Button type="button" variant="secondary" onClick={() => startEditing(merchant)}>
@@ -197,6 +198,12 @@ export default function ProfilePage() {
           ) : (
             <Card className="max-w-2xl">
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Account number</p>
+                  <p className="numeric mt-0.5 text-sm text-slate-900">
+                    {merchant.account?.account_number_formatted ?? '—'}
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Phone</p>
                   <p className="mt-0.5 text-sm text-slate-900">{merchant.phone ?? '—'}</p>

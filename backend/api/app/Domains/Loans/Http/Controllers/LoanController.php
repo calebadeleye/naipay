@@ -7,11 +7,13 @@ namespace App\Domains\Loans\Http\Controllers;
 use App\Domains\Accounts\Models\BankAccount;
 use App\Domains\Identity\Models\Staff;
 use App\Domains\Loans\Http\Requests\DisburseLoanRequest;
+use App\Domains\Loans\Http\Requests\RescheduleLoanRequest;
 use App\Domains\Loans\Http\Requests\WriteOffLoanRequest;
 use App\Domains\Loans\Http\Resources\LoanResource;
 use App\Domains\Loans\Models\Loan;
 use App\Domains\Loans\Notifications\LoanScheduleNotification;
 use App\Domains\Loans\Services\LoanDisbursementService;
+use App\Domains\Loans\Services\LoanRescheduleService;
 use App\Domains\Loans\Services\LoanScheduleExportService;
 use App\Domains\Loans\Services\LoanService;
 use App\Support\Exceptions\DomainException;
@@ -32,6 +34,7 @@ final class LoanController
         private readonly LoanService $loans,
         private readonly LoanDisbursementService $disbursements,
         private readonly LoanScheduleExportService $scheduleExport,
+        private readonly LoanRescheduleService $reschedules,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -115,6 +118,30 @@ final class LoanController
     }
 
     /**
+     * Shifts the repayment schedule to new dates — for a public holiday, or
+     * at a merchant's request. Only the dates move: instalment amounts,
+     * interest and the loan's totals are untouched, and no ledger entry is
+     * involved.
+     */
+    public function reschedule(RescheduleLoanRequest $request, Loan $loan): JsonResponse
+    {
+        /** @var Staff $actor */
+        $actor = $request->user();
+
+        $updated = $this->reschedules->reschedule(
+            $loan,
+            Carbon::parse($request->validated('next_due_date')),
+            $request->validated('reason'),
+            $actor,
+        );
+
+        return ApiResponse::success(
+            new LoanResource($updated->load([...self::RELATIONS, 'scheduleEntries'])),
+            "{$updated->loan_reference} has been rescheduled.",
+        );
+    }
+
+    /**
      * Writes off a disbursed loan's outstanding principal. There is no
      * delete: every disbursement on record names a loan permanently.
      */
@@ -149,7 +176,7 @@ final class LoanController
      */
     public function emailSchedule(Loan $loan): JsonResponse
     {
-        $loan->loadMissing('merchant');
+        $loan->loadMissing('merchant.account');
 
         if ($loan->merchant === null || $loan->merchant->email === null) {
             throw new DomainException('This merchant has no email address on file.');

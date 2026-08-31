@@ -66,7 +66,15 @@ export default function ReceiptsPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-slate-700">{receipt.merchant?.full_name ?? '—'}</td>
-                    <td className="numeric px-4 py-3 text-slate-700">{receipt.loan?.loan_reference ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {receipt.loan ? (
+                        <Link href={`/loans/${receipt.loan.id}`} className="text-brand-700 hover:underline">
+                          View loan
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="numeric px-4 py-3 text-right text-slate-700">{formatMoney(receipt.amount)}</td>
                     <td className="px-4 py-3 text-slate-500">{formatDateTime(receipt.issued_at)}</td>
                   </tr>

@@ -1,7 +1,7 @@
 'use client';
 
 import { ApiError } from '@naipay/api-client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { Alert, Field } from '@/components/ui/field';
@@ -10,7 +10,8 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { SelectField } from '@/components/ui/select';
 import { RequirePermission } from '@/components/auth/require-permission';
-import { useMerchants } from '@/lib/merchants/use-merchants';
+import { merchantLabel } from '@/lib/format';
+import { useMerchant, useMerchants } from '@/lib/merchants/use-merchants';
 import { useBusinesses } from '@/lib/businesses/use-businesses';
 import { useLoanProductOptions } from '@/lib/loan-products/use-loan-products';
 import { useCreateLoanApplication } from '@/lib/loan-applications/use-loan-applications';
@@ -33,7 +34,7 @@ function MerchantPicker({
         <div className="flex items-center justify-between rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
           <div>
             <p className="font-medium text-slate-900">{selected.full_name}</p>
-            <p className="numeric text-xs text-slate-500">{selected.merchant_number}</p>
+            <p className="numeric text-xs text-slate-500">{merchantLabel(selected)}</p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={() => onSelect(null)}>
             Change
@@ -47,7 +48,7 @@ function MerchantPicker({
     <div className="space-y-1.5">
       <Field
         label="Merchant"
-        placeholder="Search by name, phone or merchant number"
+        placeholder="Search by name, phone or account number"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         hint="Type at least 2 characters to search."
@@ -66,7 +67,7 @@ function MerchantPicker({
               >
                 <p className="font-medium text-slate-900">{merchant.full_name}</p>
                 <p className="numeric text-xs text-slate-500">
-                  {merchant.merchant_number} · {merchant.phone}
+                  {merchantLabel(merchant)} · {merchant.phone}
                 </p>
               </button>
             ))
@@ -89,7 +90,16 @@ export default function NewLoanApplicationPage() {
 
 function NewLoanApplicationForm() {
   const router = useRouter();
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const searchParams = useSearchParams();
+  const preselectMerchantId = searchParams.get('merchant');
+
+  // Landed here from a merchant's profile — that merchant is the selection
+  // until the officer explicitly changes it (`merchantChoice` then holds
+  // their pick, or `null` once they clear it).
+  const { data: preselectedMerchant } = useMerchant(preselectMerchantId ?? '');
+  const [merchantChoice, setMerchantChoice] = useState<Merchant | null | undefined>(undefined);
+  const merchant = merchantChoice !== undefined ? merchantChoice : (preselectedMerchant ?? null);
+
   const [businessId, setBusinessId] = useState('');
   const [loanProductId, setLoanProductId] = useState('');
   const [amount, setAmount] = useState('');
@@ -138,7 +148,7 @@ function NewLoanApplicationForm() {
             </Alert>
           ) : null}
 
-          <MerchantPicker selected={merchant} onSelect={setMerchant} />
+          <MerchantPicker selected={merchant} onSelect={setMerchantChoice} />
 
           {merchant ? (
             !merchant.can_borrow ? (

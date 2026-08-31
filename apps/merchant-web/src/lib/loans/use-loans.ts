@@ -26,13 +26,13 @@ export function useLoan(id: number | string) {
  * client's `download()` returns a Blob, not a URL, since files are streamed
  * through an authenticated endpoint rather than served from a public path.
  */
-export async function downloadLoanSchedule(id: number | string, loanReference: string): Promise<void> {
+export async function downloadLoanSchedule(id: number | string, filenameBase: string): Promise<void> {
   const blob = await api.download(`/merchant/loans/${id}/schedule/pdf`);
 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${loanReference}-schedule.pdf`;
+  link.download = `${filenameBase}.pdf`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

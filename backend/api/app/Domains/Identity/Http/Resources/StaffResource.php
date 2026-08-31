@@ -50,6 +50,9 @@ final class StaffResource extends JsonResource
             'two_factor' => [
                 'enabled' => $staff->hasTwoFactorEnabled(),
                 'required' => $staff->requiresTwoFactor(),
+                // Mandatory for this role but not yet set up: the console shows
+                // a persistent banner rather than blocking sign-in.
+                'setup_pending' => $staff->twoFactorSetupPending(),
                 'confirmed_at' => $staff->two_factor_confirmed_at?->toIso8601String(),
             ],
 

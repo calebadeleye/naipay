@@ -21,7 +21,7 @@ use Illuminate\Http\Request;
 
 final class RepaymentController
 {
-    private const RELATIONS = ['loan', 'merchant', 'business', 'branch', 'receivingBankAccount', 'recordedBy', 'verifiedBy', 'approvedBy', 'rejectedBy', 'reversedBy'];
+    private const RELATIONS = ['loan', 'merchant.account', 'business', 'branch', 'receivingBankAccount', 'recordedBy', 'verifiedBy', 'approvedBy', 'rejectedBy', 'reversedBy'];
 
     public function __construct(
         private readonly RepaymentService $repayments,
@@ -46,7 +46,7 @@ final class RepaymentController
             defaultSort: ['-created_at'],
         );
 
-        $query = Repayment::query()->visibleTo($actor)->with(['loan', 'merchant']);
+        $query = Repayment::query()->visibleTo($actor)->with(['loan', 'merchant.account']);
 
         $repayments = QueryPipeline::for($request, $specification)->paginate($query);
 

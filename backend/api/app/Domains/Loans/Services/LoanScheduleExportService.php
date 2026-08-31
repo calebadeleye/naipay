@@ -19,13 +19,17 @@ final class LoanScheduleExportService
 {
     public function render(Loan $loan): string
     {
-        $loan->loadMissing(['scheduleEntries', 'merchant', 'business']);
+        $loan->loadMissing(['scheduleEntries', 'merchant.account', 'business']);
 
         return Pdf::loadView('loans.schedule-pdf', ['loan' => $loan])->output();
     }
 
     public function filename(Loan $loan): string
     {
-        return "{$loan->loan_reference}-schedule.pdf";
+        $loan->loadMissing('merchant.account');
+
+        $identifier = $loan->merchant?->account?->account_number ?? $loan->loan_reference;
+
+        return "repayment-schedule-{$identifier}.pdf";
     }
 }

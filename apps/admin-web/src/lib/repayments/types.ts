@@ -48,7 +48,13 @@ export interface Repayment {
   } | null;
 
   loan: { id: number; loan_reference: string; status: string } | null;
-  merchant: { id: number; merchant_number: string; full_name: string } | null;
+  merchant: {
+    id: number;
+    merchant_number: string;
+    full_name: string;
+    account_number: string | null;
+    account_number_formatted: string | null;
+  } | null;
   receiving_bank_account: string | null;
 
   verification: { notes: string | null; verified_by: StaffSummary | null; verified_at: string } | null;

@@ -62,6 +62,12 @@ final class RepaymentResource extends JsonResource
                 'id' => $repayment->merchant->id,
                 'merchant_number' => $repayment->merchant->merchant_number,
                 'full_name' => $repayment->merchant->fullName(),
+                'account_number' => $repayment->merchant->relationLoaded('account') && $repayment->merchant->account !== null
+                    ? $repayment->merchant->account->account_number
+                    : null,
+                'account_number_formatted' => $repayment->merchant->relationLoaded('account') && $repayment->merchant->account !== null
+                    ? $repayment->merchant->account->formattedAccountNumber()
+                    : null,
             ] : null,
 
             'receiving_bank_account' => $repayment->relationLoaded('receivingBankAccount') && $repayment->receivingBankAccount !== null

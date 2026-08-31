@@ -43,7 +43,7 @@ export default function CompliancePage() {
                   <thead>
                     <tr className="text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       <th className="px-4 py-2">Merchant</th>
-                      <th className="px-4 py-2">Reference</th>
+                      <th className="px-4 py-2">Merchant no.</th>
                       <th className="px-4 py-2">KYC status</th>
                       <th className="px-4 py-2 text-right">Days waiting</th>
                     </tr>
