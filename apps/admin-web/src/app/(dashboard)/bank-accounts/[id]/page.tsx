@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 import { Alert } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { useHasPermission } from '@/lib/auth/use-permission';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { QueryState } from '@/components/ui/query-state';
@@ -83,6 +85,7 @@ export default function BankAccountDetailPage() {
   const { data: account, isLoading, error } = useBankAccount(id);
   const setDefault = useSetDefaultBankAccount(id);
   const changeStatus = useChangeBankAccountStatus(id);
+  const canManage = useHasPermission('bank_accounts.manage');
 
   return (
     <QueryState isLoading={isLoading} error={error}>
@@ -95,6 +98,11 @@ export default function BankAccountDetailPage() {
               <div className="flex items-center gap-2">
                 {!account.is_approved ? <Badge tone="warning">Pending approval</Badge> : null}
                 <Badge tone={statusTone[account.status]}>{account.status_label}</Badge>
+                {canManage ? (
+                  <Link href={`/bank-accounts/${account.id}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+                    Edit
+                  </Link>
+                ) : null}
               </div>
             }
           />

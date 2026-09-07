@@ -132,12 +132,18 @@ final class BankAccountService
      * "Default collection account" and "default disbursement account" are
      * two independent flags: an account can hold either, both, or neither, and
      * setting one never disturbs the other.
+     *
+     * Being a default for a flow is a designation for it, so the matching
+     * BankAccountPurpose is added to `purposes` here if it is missing —
+     * keeping the flag and the purpose set from ever disagreeing, which is
+     * what let a "default disbursement account" still be refused for
+     * disbursement.
      */
     public function setAsDefault(BankAccount $account, string $which, Staff $actor): BankAccount
     {
-        $column = match ($which) {
-            'collection' => 'is_default_collection_account',
-            'disbursement' => 'is_default_disbursement_account',
+        [$column, $purpose] = match ($which) {
+            'collection' => ['is_default_collection_account', BankAccountPurpose::LoanRepaymentCollection],
+            'disbursement' => ['is_default_disbursement_account', BankAccountPurpose::LoanDisbursement],
             default => throw new DomainException("Unknown default type [{$which}]."),
         };
 
@@ -147,7 +153,7 @@ final class BankAccountService
             );
         }
 
-        return DB::transaction(function () use ($account, $column, $which, $actor): BankAccount {
+        return DB::transaction(function () use ($account, $column, $purpose, $which, $actor): BankAccount {
             // Row-locked so two concurrent "make me the default" requests
             // cannot both succeed and leave two accounts holding the title.
             BankAccount::query()
@@ -158,7 +164,13 @@ final class BankAccountService
 
             $before = $account->getAttributes();
 
-            $account->forceFill([$column => true])->save();
+            $attributes = [$column => true];
+
+            if (! $account->hasPurpose($purpose)) {
+                $attributes['purposes'] = [...$account->purposeValues(), $purpose->value];
+            }
+
+            $account->forceFill($attributes)->save();
 
             $this->audit->recordChange(
                 'bank_account.default_changed',

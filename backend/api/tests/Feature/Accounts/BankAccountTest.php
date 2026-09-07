@@ -336,6 +336,24 @@ final class BankAccountTest extends TestCase
     }
 
     #[Test]
+    public function making_an_account_a_default_adds_the_matching_purpose(): void
+    {
+        $this->actingAsRole(Role::FinanceManager);
+
+        // Registered for collection only.
+        $account = BankAccount::factory()->approved()->forCollection()->create();
+
+        $response = $this->postJson("/api/v1/admin/bank-accounts/{$account->id}/default", ['which' => 'disbursement'])
+            ->assertOk();
+
+        $this->assertContains(BankAccountPurpose::LoanDisbursement->value, $response->json('data.purposes'));
+
+        // And so it can now actually fund a disbursement.
+        $this->assertTrue($account->fresh()->hasPurpose(BankAccountPurpose::LoanDisbursement));
+        $this->assertTrue($account->fresh()->hasPurpose(BankAccountPurpose::LoanRepaymentCollection));
+    }
+
+    #[Test]
     public function a_suspended_account_cannot_be_made_a_default(): void
     {
         $this->actingAsRole(Role::FinanceManager);
