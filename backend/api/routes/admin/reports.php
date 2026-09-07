@@ -35,6 +35,10 @@ Route::middleware(['auth:staff', 'session.expiry', 'security.steps'])
                     ->middleware('permission:'.Permission::ReportsView->value)
                     ->name('loan-portfolio');
 
+                Route::get('loan-portfolio/analytics', [ReportController::class, 'portfolioAnalytics'])
+                    ->middleware('permission:'.Permission::ReportsView->value)
+                    ->name('loan-portfolio.analytics');
+
                 Route::get('collections', [ReportController::class, 'collections'])
                     ->middleware('permission:'.Permission::ReportsView->value)
                     ->name('collections');

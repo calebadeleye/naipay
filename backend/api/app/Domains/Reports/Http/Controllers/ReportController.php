@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Reports\Http\Controllers;
 
+use App\Domains\Identity\Models\Staff;
+use App\Domains\Reports\Data\PortfolioFilter;
+use App\Domains\Reports\Http\Requests\PortfolioAnalyticsRequest;
+use App\Domains\Reports\Services\LoanPortfolioAnalyticsService;
 use App\Domains\Reports\Services\ReportService;
 use App\Support\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +18,7 @@ final class ReportController
 {
     public function __construct(
         private readonly ReportService $reports,
+        private readonly LoanPortfolioAnalyticsService $portfolioAnalytics,
     ) {}
 
     public function dashboard(): JsonResponse
@@ -31,6 +36,24 @@ final class ReportController
     public function loanPortfolio(): JsonResponse
     {
         return ApiResponse::success($this->reports->loanPortfolio(), 'Loan portfolio retrieved.');
+    }
+
+    /**
+     * The full portfolio analytics payload — KPIs, risk, ageing, collections,
+     * disbursements, and every breakdown — for one set of filters, computed in
+     * the backend and scoped to what the acting staff member may see.
+     */
+    public function portfolioAnalytics(PortfolioAnalyticsRequest $request): JsonResponse
+    {
+        /** @var Staff $actor */
+        $actor = $request->user();
+
+        $filter = PortfolioFilter::fromRequest($request);
+
+        return ApiResponse::success(
+            $this->portfolioAnalytics->analyse($filter, $actor),
+            'Loan portfolio analytics retrieved.',
+        );
     }
 
     public function collections(Request $request): JsonResponse

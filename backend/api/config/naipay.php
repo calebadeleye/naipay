@@ -214,8 +214,16 @@ return [
             ['label' => 'Over 180 days', 'from' => 181, 'to' => null],
         ],
 
-        // Portfolio at risk is measured from this many days past due.
+        // Portfolio at risk is measured from this many days past due. Used
+        // wherever a single PAR figure is shown (the dashboard headline KPI,
+        // the delinquency report).
         'par_threshold_days' => env('NAIPAY_PAR_THRESHOLD_DAYS', 30),
+
+        // The bands the portfolio dashboard's "Portfolio Risk" panel reports,
+        // each measured as the outstanding principal of loans at least this
+        // many days past due. Institution-configurable; keep 30 in the list
+        // for the headline KPI to line up with a band.
+        'par_thresholds' => [1, 7, 30, 60, 90],
 
         /*
          * Public holidays, as Y-m-d.
