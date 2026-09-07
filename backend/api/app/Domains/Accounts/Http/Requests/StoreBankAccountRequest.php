@@ -32,7 +32,10 @@ final class StoreBankAccountRequest extends FormRequest
             ],
             'branch_name' => ['nullable', 'string', 'max:150'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'account_purpose' => ['required', Rule::enum(BankAccountPurpose::class)],
+            // One account may serve several purposes at once — commonly both
+            // disbursement and repayment collection.
+            'purposes' => ['required', 'array', 'min:1'],
+            'purposes.*' => ['distinct', Rule::enum(BankAccountPurpose::class)],
         ];
     }
 

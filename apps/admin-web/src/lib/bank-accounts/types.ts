@@ -19,8 +19,8 @@ export interface BankAccount {
   branch_name: string | null;
   currency: string;
 
-  account_purpose: BankAccountPurposeKey;
-  account_purpose_label: string;
+  purposes: BankAccountPurposeKey[];
+  purpose_labels: string[];
 
   is_default_collection_account: boolean;
   is_default_disbursement_account: boolean;
@@ -44,5 +44,5 @@ export interface BankAccountFormInput {
   account_number: string;
   branch_name?: string;
   currency?: string;
-  account_purpose: string;
+  purposes: BankAccountPurposeKey[];
 }

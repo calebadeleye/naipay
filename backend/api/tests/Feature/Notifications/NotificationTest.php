@@ -86,7 +86,7 @@ final class NotificationTest extends TestCase
     {
         $loan = Loan::factory()->pendingDisbursement()->create();
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $actor = $this->actingAsRole(Role::FinanceManager);

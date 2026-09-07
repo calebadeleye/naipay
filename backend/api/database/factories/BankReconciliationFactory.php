@@ -24,7 +24,7 @@ final class BankReconciliationFactory extends Factory
     {
         return [
             'bank_account_id' => BankAccountFactory::new()->approved()->state([
-                'account_purpose' => BankAccountPurpose::LoanRepaymentCollection,
+                'purposes' => [BankAccountPurpose::LoanRepaymentCollection->value],
             ]),
             'period_start' => now()->startOfMonth()->toDateString(),
             'period_end' => now()->endOfMonth()->toDateString(),

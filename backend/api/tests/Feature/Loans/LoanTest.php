@@ -173,7 +173,7 @@ final class LoanTest extends TestCase
 
         $this->actingAsRole(Role::FinanceManager);
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -211,7 +211,7 @@ final class LoanTest extends TestCase
 
         $this->actingAsRole(Role::FinanceManager);
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -234,7 +234,7 @@ final class LoanTest extends TestCase
         $loan = Loan::factory()->pendingDisbursement()->create();
 
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -251,7 +251,7 @@ final class LoanTest extends TestCase
         $loan = Loan::factory()->create(['approved_by' => $approver->id, 'status' => LoanStatus::PendingDisbursement]);
 
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         // Self-approval is no longer restricted — see
@@ -271,7 +271,7 @@ final class LoanTest extends TestCase
         $loan = Loan::factory()->create();
 
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -288,7 +288,7 @@ final class LoanTest extends TestCase
         $loan = Loan::factory()->pendingDisbursement()->create();
 
         $bankAccount = BankAccount::factory()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -306,7 +306,7 @@ final class LoanTest extends TestCase
         $loan = Loan::factory()->pendingDisbursement()->create();
 
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanRepaymentCollection,
+            'purposes' => [BankAccountPurpose::LoanRepaymentCollection->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -317,13 +317,35 @@ final class LoanTest extends TestCase
     }
 
     #[Test]
+    public function an_account_purposed_for_both_disbursement_and_collection_can_disburse(): void
+    {
+        $this->actingAsRole(Role::FinanceManager);
+        $loan = Loan::factory()->pendingDisbursement()->create();
+
+        // The same account is designated for both repayment collection and
+        // disbursement — a common real setup. It must still fund a
+        // disbursement; a second purpose does not disqualify the first.
+        $bankAccount = BankAccount::factory()->approved()->forPurposes(
+            BankAccountPurpose::LoanRepaymentCollection,
+            BankAccountPurpose::LoanDisbursement,
+        )->create();
+
+        $response = $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", [
+            'bank_account_id' => $bankAccount->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertSame(LoanStatus::Disbursed, $loan->fresh()->status);
+    }
+
+    #[Test]
     public function a_repeated_disbursement_request_never_posts_twice(): void
     {
         $loan = Loan::factory()->pendingDisbursement()->create();
 
         $this->actingAsRole(Role::FinanceManager);
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $this->postJson("/api/v1/admin/loans/{$loan->id}/disburse", ['bank_account_id' => $bankAccount->id])

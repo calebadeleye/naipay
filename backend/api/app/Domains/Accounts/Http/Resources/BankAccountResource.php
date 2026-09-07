@@ -31,8 +31,8 @@ final class BankAccountResource extends JsonResource
             'branch_name' => $account->branch_name,
             'currency' => $account->currency,
 
-            'account_purpose' => $account->account_purpose->value,
-            'account_purpose_label' => $account->account_purpose->label(),
+            'purposes' => $account->purposeValues(),
+            'purpose_labels' => $account->purposeLabels(),
 
             'is_default_collection_account' => $account->is_default_collection_account,
             'is_default_disbursement_account' => $account->is_default_disbursement_account,

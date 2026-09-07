@@ -11,7 +11,6 @@ use App\Domains\Accounts\Http\Resources\BankAccountResource;
 use App\Domains\Accounts\Models\BankAccount;
 use App\Domains\Accounts\Services\BankAccountService;
 use App\Domains\Identity\Models\Staff;
-use App\Support\Exceptions\DomainException;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\FilterType;
 use App\Support\Query\QueryPipeline;
@@ -32,14 +31,31 @@ final class BankAccountController
             searchable: ['bank_name', 'account_name', 'account_number'],
             filters: [
                 'status' => FilterType::In,
-                'account_purpose' => FilterType::In,
             ],
             sortable: ['bank_name', 'account_name', 'status', 'created_at'],
             defaultSort: ['bank_name'],
         );
 
-        $accounts = QueryPipeline::for($request, $specification)
-            ->paginate(BankAccount::query()->with(['approvedBy']));
+        $query = BankAccount::query()->with(['approvedBy']);
+
+        // `purposes` is a JSON set, so it cannot go through the pipeline's
+        // column filters: an account matches when it carries any requested
+        // purpose. Accepts `?purpose=a,b` or repeated `?purpose[]=`.
+        $purposes = collect(
+            is_array($raw = $request->input('purpose', $request->input('account_purpose', [])))
+                ? $raw
+                : explode(',', (string) $raw),
+        )->map(fn (mixed $value): string => trim((string) $value))->filter()->values();
+
+        if ($purposes->isNotEmpty()) {
+            $query->where(function ($builder) use ($purposes): void {
+                foreach ($purposes as $purpose) {
+                    $builder->orWhereJsonContains('purposes', $purpose);
+                }
+            });
+        }
+
+        $accounts = QueryPipeline::for($request, $specification)->paginate($query);
 
         return ApiResponse::paginated(
             $accounts->through(fn (BankAccount $account) => new BankAccountResource($account)),
@@ -59,7 +75,7 @@ final class BankAccountController
             ->map(fn (BankAccount $account): array => [
                 'value' => $account->id,
                 'label' => $account->label(),
-                'account_purpose' => $account->account_purpose->value,
+                'purposes' => $account->purposeValues(),
                 'is_default_collection_account' => $account->is_default_collection_account,
                 'is_default_disbursement_account' => $account->is_default_disbursement_account,
             ]);

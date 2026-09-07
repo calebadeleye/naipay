@@ -104,7 +104,7 @@ export default function BankAccountsPage() {
                         {account.account_number_formatted} · {account.account_name}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{account.account_purpose_label}</td>
+                    <td className="px-4 py-3 text-slate-700">{account.purpose_labels.join(', ')}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1.5">
                         {account.is_default_collection_account ? (

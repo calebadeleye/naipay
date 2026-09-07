@@ -9,10 +9,12 @@ use App\Domains\Accounts\Enums\BankAccountStatus;
 use App\Domains\Identity\Models\Staff;
 use Database\Factories\BankAccountFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 /**
  * One of Naipay's own designated bank accounts.
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property string $bank_name
  * @property string $account_number
- * @property BankAccountPurpose $account_purpose
+ * @property Collection<int, BankAccountPurpose> $purposes
  * @property BankAccountStatus $status
  * @property bool $is_default_collection_account
  * @property bool $is_default_disbursement_account
@@ -46,7 +48,7 @@ class BankAccount extends Model
         'account_number',
         'branch_name',
         'currency',
-        'account_purpose',
+        'purposes',
     ];
 
     /**
@@ -74,11 +76,34 @@ class BankAccount extends Model
     }
 
     /**
+     * Accounts that carry the given purpose among possibly several.
+     *
      * @param  Builder<BankAccount>  $query
      */
     public function scopeForPurpose(Builder $query, BankAccountPurpose $purpose): void
     {
-        $query->where('account_purpose', $purpose->value);
+        $query->whereJsonContains('purposes', $purpose->value);
+    }
+
+    public function hasPurpose(BankAccountPurpose $purpose): bool
+    {
+        return $this->purposes->contains($purpose);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function purposeValues(): array
+    {
+        return $this->purposes->map(fn (BankAccountPurpose $purpose): string => $purpose->value)->values()->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function purposeLabels(): array
+    {
+        return BankAccountPurpose::labelsFor($this->purposes);
     }
 
     /**
@@ -120,7 +145,7 @@ class BankAccount extends Model
     protected function casts(): array
     {
         return [
-            'account_purpose' => BankAccountPurpose::class,
+            'purposes' => AsEnumCollection::of(BankAccountPurpose::class),
             'status' => BankAccountStatus::class,
             'is_default_collection_account' => 'boolean',
             'is_default_disbursement_account' => 'boolean',

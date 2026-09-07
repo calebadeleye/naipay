@@ -37,7 +37,7 @@ final class RepaymentFactory extends Factory
             },
 
             'receiving_bank_account_id' => BankAccountFactory::new()->approved()->state([
-                'account_purpose' => BankAccountPurpose::LoanRepaymentCollection,
+                'purposes' => [BankAccountPurpose::LoanRepaymentCollection->value],
             ]),
 
             'amount' => '7500.00',

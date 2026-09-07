@@ -9,7 +9,7 @@ import type { BankAccount, BankAccountFormInput } from '@/lib/bank-accounts/type
 export interface BankAccountOption {
   value: number;
   label: string;
-  account_purpose: string;
+  purposes: string[];
   is_default_collection_account: boolean;
   is_default_disbursement_account: boolean;
 }

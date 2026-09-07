@@ -37,7 +37,7 @@ final class BankAccountTest extends TestCase
             'account_name' => 'Naipay Microfinance',
             'account_number' => '1234567890',
             'currency' => 'NGN',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement->value,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response->assertCreated();
@@ -52,6 +52,47 @@ final class BankAccountTest extends TestCase
     }
 
     #[Test]
+    public function an_account_can_be_registered_for_several_purposes_at_once(): void
+    {
+        $this->actingAsRole(Role::FinanceManager);
+
+        $response = $this->postJson('/api/v1/admin/bank-accounts', [
+            'bank_name' => 'Zenith Bank',
+            'account_name' => 'Naipay Microfinance',
+            'account_number' => '1234567890',
+            'purposes' => [
+                BankAccountPurpose::LoanDisbursement->value,
+                BankAccountPurpose::LoanRepaymentCollection->value,
+            ],
+        ]);
+
+        $response->assertCreated();
+        $this->assertEqualsCanonicalizing(
+            [BankAccountPurpose::LoanDisbursement->value, BankAccountPurpose::LoanRepaymentCollection->value],
+            $response->json('data.purposes'),
+        );
+
+        $account = BankAccount::query()->firstOrFail();
+        $this->assertTrue($account->hasPurpose(BankAccountPurpose::LoanDisbursement));
+        $this->assertTrue($account->hasPurpose(BankAccountPurpose::LoanRepaymentCollection));
+    }
+
+    #[Test]
+    public function at_least_one_purpose_is_required(): void
+    {
+        $this->actingAsRole(Role::FinanceManager);
+
+        $response = $this->postJson('/api/v1/admin/bank-accounts', [
+            'bank_name' => 'Zenith Bank',
+            'account_name' => 'Naipay Microfinance',
+            'account_number' => '1234567890',
+            'purposes' => [],
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['purposes']);
+    }
+
+    #[Test]
     public function an_account_number_must_be_exactly_ten_digits(): void
     {
         $this->actingAsRole(Role::FinanceManager);
@@ -60,7 +101,7 @@ final class BankAccountTest extends TestCase
             'bank_name' => 'Zenith Bank',
             'account_name' => 'Naipay Microfinance',
             'account_number' => '12345',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement->value,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['account_number']);
@@ -80,7 +121,7 @@ final class BankAccountTest extends TestCase
             'bank_name' => 'Zenith Bank',
             'account_name' => 'Naipay Microfinance',
             'account_number' => '1234567890',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement->value,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['account_number']);
@@ -95,7 +136,7 @@ final class BankAccountTest extends TestCase
             'bank_name' => 'Zenith Bank',
             'account_name' => 'Naipay Microfinance',
             'account_number' => '1234567890',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement->value,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response->assertForbidden();
@@ -110,7 +151,7 @@ final class BankAccountTest extends TestCase
             'bank_name' => 'Zenith Bank',
             'account_name' => 'Naipay Microfinance',
             'account_number' => '1234567890',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement->value,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ])->assertCreated();
 
         $entry = AuditLog::query()->where('action', 'bank_account.created')->firstOrFail();
@@ -260,11 +301,11 @@ final class BankAccountTest extends TestCase
         $this->actingAsRole(Role::FinanceManager);
 
         $first = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
             'is_default_disbursement_account' => true,
         ]);
         $second = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->postJson("/api/v1/admin/bank-accounts/{$second->id}/default", [

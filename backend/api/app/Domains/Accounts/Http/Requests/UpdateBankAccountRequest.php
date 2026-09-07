@@ -29,7 +29,8 @@ final class UpdateBankAccountRequest extends FormRequest
             'account_number' => ['sometimes', 'string', 'regex:/^\d{10}$/'],
             'branch_name' => ['nullable', 'string', 'max:150'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'account_purpose' => ['sometimes', Rule::enum(BankAccountPurpose::class)],
+            'purposes' => ['sometimes', 'array', 'min:1'],
+            'purposes.*' => ['distinct', Rule::enum(BankAccountPurpose::class)],
         ];
     }
 

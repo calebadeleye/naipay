@@ -8,12 +8,11 @@ import { Alert, Field } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { SelectField } from '@/components/ui/select';
 import { RequirePermission } from '@/components/auth/require-permission';
 import { useCreateBankAccount } from '@/lib/bank-accounts/use-bank-accounts';
-import type { BankAccountFormInput } from '@/lib/bank-accounts/types';
+import type { BankAccountFormInput, BankAccountPurposeKey } from '@/lib/bank-accounts/types';
 
-const purposeOptions = [
+const purposeOptions: { value: BankAccountPurposeKey; label: string }[] = [
   { value: 'loan_repayment_collection', label: 'Loan Repayment Collection' },
   { value: 'loan_disbursement', label: 'Loan Disbursement' },
   { value: 'operating_account', label: 'Operating Account' },
@@ -29,7 +28,7 @@ const emptyForm: BankAccountFormInput = {
   account_number: '',
   branch_name: '',
   currency: 'NGN',
-  account_purpose: 'loan_repayment_collection',
+  purposes: ['loan_repayment_collection'],
 };
 
 export default function NewBankAccountPage() {
@@ -48,6 +47,22 @@ function NewBankAccountForm() {
 
   function set<K extends keyof BankAccountFormInput>(key: K, value: BankAccountFormInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function togglePurpose(purpose: BankAccountPurposeKey, checked: boolean) {
+    setForm((current) => {
+      const next = checked
+        ? [...current.purposes, purpose]
+        : current.purposes.filter((value) => value !== purpose);
+
+      // Preserve the canonical option order regardless of click order.
+      return {
+        ...current,
+        purposes: purposeOptions
+          .map((option) => option.value)
+          .filter((value) => next.includes(value)),
+      };
+    });
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -125,13 +140,32 @@ function NewBankAccountForm() {
             />
           </div>
 
-          <SelectField
-            label="Purpose"
-            options={purposeOptions}
-            value={form.account_purpose}
-            onChange={(event) => set('account_purpose', event.target.value)}
-            error={error?.fieldError('account_purpose')}
-          />
+          <fieldset className="space-y-2">
+            <legend className="block text-sm font-medium text-slate-800">Purposes</legend>
+            <p className="text-xs text-slate-500">
+              An account can serve more than one — commonly both repayment collection and
+              disbursement.
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {purposeOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800"
+                >
+                  <input
+                    type="checkbox"
+                    className="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    checked={form.purposes.includes(option.value)}
+                    onChange={(event) => togglePurpose(option.value, event.target.checked)}
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+            {error?.fieldError('purposes') ? (
+              <p className="text-xs text-danger">{error.fieldError('purposes')}</p>
+            ) : null}
+          </fieldset>
 
           <div className="flex gap-3">
             <Button type="submit" loading={createAccount.isPending}>

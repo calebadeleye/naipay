@@ -45,7 +45,7 @@ final class ReauthenticationTest extends TestCase
 
         $loan = Loan::factory()->pendingDisbursement()->create();
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->tokenRequest($token, 'POST', "/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -64,7 +64,7 @@ final class ReauthenticationTest extends TestCase
 
         $loan = Loan::factory()->pendingDisbursement()->create();
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $this->tokenRequest($token, 'POST', '/api/v1/admin/auth/reauthenticate', [
@@ -124,7 +124,7 @@ final class ReauthenticationTest extends TestCase
 
         $loan = Loan::factory()->pendingDisbursement()->create();
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         $response = $this->tokenRequest($token, 'POST', "/api/v1/admin/loans/{$loan->id}/disburse", [
@@ -151,7 +151,7 @@ final class ReauthenticationTest extends TestCase
 
         $loan = Loan::factory()->pendingDisbursement()->create();
         $bankAccount = BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
         ]);
 
         // The other session's token was never reauthenticated.

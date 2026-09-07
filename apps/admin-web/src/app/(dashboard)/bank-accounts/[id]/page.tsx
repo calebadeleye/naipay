@@ -137,7 +137,7 @@ export default function BankAccountDetailPage() {
               <Detail label="Bank code" value={account.bank_code} />
               <Detail label="Branch" value={account.branch_name} />
               <Detail label="Currency" value={account.currency} />
-              <Detail label="Purpose" value={account.account_purpose_label} />
+              <Detail label="Purposes" value={account.purpose_labels.join(', ')} />
               <Detail label="Approved by" value={account.approved_by} />
               <Detail label="Approved at" value={formatDateTime(account.approved_at)} />
             </div>

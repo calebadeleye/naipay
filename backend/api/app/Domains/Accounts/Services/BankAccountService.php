@@ -67,12 +67,11 @@ final class BankAccountService
             // number, or what the account is used for — is exactly what
             // approval exists to catch, so it is withdrawn and must be given
             // again. Correcting a display label does not.
-            $materialFields = ['bank_name', 'account_number', 'account_purpose', 'currency'];
-            $isMaterial = ! empty(array_intersect_key($attributes, array_flip($materialFields)))
-                && collect($materialFields)->contains(
-                    fn (string $field): bool => array_key_exists($field, $attributes)
-                        && (string) $attributes[$field] !== (string) $account->{$field}
-                );
+            $materialFields = ['bank_name', 'account_number', 'purposes', 'currency'];
+            $isMaterial = collect($materialFields)->contains(
+                fn (string $field): bool => array_key_exists($field, $attributes)
+                    && $this->materialValueChanged($field, $attributes[$field], $account)
+            );
 
             $account->fill($attributes);
 
@@ -225,5 +224,25 @@ final class BankAccountService
         }
 
         return BankAccount::query()->active()->where($column, true)->first();
+    }
+
+    /**
+     * Whether an incoming value for a material field actually differs from
+     * what the account holds. `purposes` is compared as an unordered set;
+     * everything else as a string.
+     */
+    private function materialValueChanged(string $field, mixed $incoming, BankAccount $account): bool
+    {
+        if ($field === 'purposes') {
+            $incomingSet = collect(is_array($incoming) ? $incoming : [$incoming])
+                ->map(fn (mixed $value): string => $value instanceof BankAccountPurpose ? $value->value : (string) $value)
+                ->unique()->sort()->values()->all();
+
+            $currentSet = collect($account->purposeValues())->sort()->values()->all();
+
+            return $incomingSet !== $currentSet;
+        }
+
+        return (string) $incoming !== (string) $account->{$field};
     }
 }

@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Domains\Accounts\Enums\BankAccountPurpose;
 use App\Domains\Accounts\Enums\BankAccountStatus;
 use App\Domains\Accounts\Models\BankAccount;
+use App\Domains\Identity\Models\Staff;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,7 +27,7 @@ final class BankAccountFactory extends Factory
             'account_name' => 'Naipay Microfinance',
             'account_number' => fake()->unique()->numerify('##########'),
             'currency' => 'NGN',
-            'account_purpose' => BankAccountPurpose::LoanDisbursement,
+            'purposes' => [BankAccountPurpose::LoanDisbursement->value],
             'status' => BankAccountStatus::Active,
         ];
     }
@@ -38,14 +39,27 @@ final class BankAccountFactory extends Factory
     public function approved(): self
     {
         return $this->state(fn (): array => [
-            'approved_by' => \App\Domains\Identity\Models\Staff::factory(),
+            'approved_by' => Staff::factory(),
             'approved_at' => now(),
         ]);
     }
 
     public function forCollection(): self
     {
-        return $this->state(fn (): array => ['account_purpose' => BankAccountPurpose::LoanRepaymentCollection]);
+        return $this->state(fn (): array => [
+            'purposes' => [BankAccountPurpose::LoanRepaymentCollection->value],
+        ]);
+    }
+
+    /**
+     * An account that carries every given purpose at once — the common case
+     * of one account used for both disbursement and repayment collection.
+     */
+    public function forPurposes(BankAccountPurpose ...$purposes): self
+    {
+        return $this->state(fn (): array => [
+            'purposes' => array_map(fn (BankAccountPurpose $purpose): string => $purpose->value, $purposes),
+        ]);
     }
 
     public function suspended(): self

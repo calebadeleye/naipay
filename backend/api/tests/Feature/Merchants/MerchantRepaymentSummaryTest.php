@@ -49,7 +49,7 @@ final class MerchantRepaymentSummaryTest extends TestCase
         ]);
 
         // A non-default one should not be picked.
-        BankAccount::factory()->create(['account_purpose' => BankAccountPurpose::LoanDisbursement]);
+        BankAccount::factory()->create(['purposes' => [BankAccountPurpose::LoanDisbursement->value]]);
 
         $response = $this->getJson('/api/v1/merchant/repayments/summary')->assertOk();
 

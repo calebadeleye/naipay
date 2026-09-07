@@ -69,7 +69,7 @@ final class LoanDisbursementService
             );
         }
 
-        if ($bankAccount->account_purpose !== BankAccountPurpose::LoanDisbursement) {
+        if (! $bankAccount->hasPurpose(BankAccountPurpose::LoanDisbursement)) {
             throw new DomainException(
                 "{$bankAccount->label()} is not designated for loan disbursement.",
             );

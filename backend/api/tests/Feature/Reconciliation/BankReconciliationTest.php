@@ -531,7 +531,7 @@ final class BankReconciliationTest extends TestCase
     private function collectionAccount(): BankAccount
     {
         return BankAccount::factory()->approved()->create([
-            'account_purpose' => BankAccountPurpose::LoanRepaymentCollection,
+            'purposes' => [BankAccountPurpose::LoanRepaymentCollection->value],
         ]);
     }
 }
