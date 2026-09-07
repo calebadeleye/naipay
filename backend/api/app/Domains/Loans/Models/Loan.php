@@ -18,11 +18,13 @@ use App\Domains\Merchants\Models\Merchant;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use Database\Factories\LoanFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * A credit facility: the record that exists once a loan application is
@@ -156,6 +158,50 @@ class Loan extends Model
     public function isDisbursed(): bool
     {
         return $this->status === LoanStatus::Disbursed;
+    }
+
+    /**
+     * Loans whose borrower is assigned to the given staff member — the same
+     * loan-officer relationship the portfolio analytics use
+     * (`merchants.assigned_officer_id`), not whoever keyed the loan in.
+     *
+     * @param  Builder<Loan>  $query
+     */
+    public function scopeForOfficer(Builder $query, int $staffId): void
+    {
+        $query->whereIn(
+            'merchant_id',
+            Merchant::query()->where('assigned_officer_id', $staffId)->select('id'),
+        );
+    }
+
+    /**
+     * Loans carrying at least one instalment that fell due before `$asOf`
+     * (default today) and is not fully paid. `$minDays` / `$maxDays` bound how
+     * far past due that earliest breach is, so a caller can ask for "30+ days"
+     * (PAR) or "8–30 days" (an ageing bucket).
+     *
+     * Arrears are read from the schedule, never inferred from a loan balance —
+     * the same rule the analytics service follows.
+     *
+     * @param  Builder<Loan>  $query
+     */
+    public function scopeInArrears(Builder $query, ?int $minDays = null, ?int $maxDays = null, ?Carbon $asOf = null): void
+    {
+        $date = ($asOf ?? Carbon::today())->toDateString();
+
+        $query->whereHas('scheduleEntries', function (Builder $entry) use ($date, $minDays, $maxDays): void {
+            $entry->whereDate('due_date', '<', $date)
+                ->whereRaw('(principal_paid + interest_paid + fee_paid) < (principal_due + interest_due + fee_due)');
+
+            if ($minDays !== null) {
+                $entry->whereRaw('DATEDIFF(?, due_date) >= ?', [$date, $minDays]);
+            }
+
+            if ($maxDays !== null) {
+                $entry->whereRaw('DATEDIFF(?, due_date) <= ?', [$date, $maxDays]);
+            }
+        });
     }
 
     /**

@@ -136,14 +136,14 @@ function LoanPortfolioDashboard() {
                 figure={data.kpis.overdue_amount}
                 currency={currency}
                 definition="Instalment amounts past their due date and still unpaid."
-                href={drillHref({ status: 'disbursed' })}
+                href={drillHref({ status: 'disbursed', overdue: 1 })}
               />
               <KpiCard
                 label="PAR 30"
                 figure={data.kpis.portfolio_at_risk_30}
                 currency={currency}
                 definition="Outstanding principal of loans 30+ days in arrears."
-                href={drillHref({ status: 'disbursed' })}
+                href={drillHref({ status: 'disbursed', min_days_past_due: 30 })}
               />
               <KpiCard
                 label="Active loans"
@@ -185,13 +185,25 @@ function LoanPortfolioDashboard() {
             <RiskPanel
               bands={data.risk}
               currency={currency}
-              onDrill={() => router.push(drillHref({ status: 'disbursed' }))}
+              onDrill={(band) =>
+                router.push(drillHref({ status: 'disbursed', min_days_past_due: band.threshold_days }))
+              }
             />
             <AgingPanel
               buckets={data.aging.buckets}
               totalLoans={data.aging.total_loans}
               currency={currency}
-              onDrill={() => router.push(drillHref({ status: 'disbursed' }))}
+              onDrill={(bucket) =>
+                router.push(
+                  bucket.from_days === 0 && bucket.to_days === 0
+                    ? drillHref({ status: 'disbursed' })
+                    : drillHref({
+                        status: 'disbursed',
+                        min_days_past_due: Math.max(1, bucket.from_days),
+                        max_days_past_due: bucket.to_days ?? undefined,
+                      }),
+                )
+              }
             />
 
             {/* ── Collection performance ────────────────────────────────── */}
@@ -214,10 +226,12 @@ function LoanPortfolioDashboard() {
             />
             <BreakdownTable
               title="Loan officer performance"
+              subtitle="Click an officer to open their loans."
               dimensionHeading="Officer"
               rows={data.by_loan_officer}
               currency={currency}
               emptyLabel="No loans attributed to an officer in this view."
+              onDrill={(row) => router.push(drillHref({ loan_officer_id: row.id ?? undefined, status: 'disbursed' }))}
             />
             <BreakdownTable
               title="By branch"

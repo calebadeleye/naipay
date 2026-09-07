@@ -59,6 +59,24 @@ final class LoanController
 
         $query = Loan::query()->visibleTo($actor)->with(['merchant.account', 'business', 'loanProduct']);
 
+        // Loan officer and days-past-due are not columns on `loans`, so they
+        // sit outside the column-driven QueryPipeline — the same relationship
+        // and schedule logic the portfolio dashboard drills in on.
+        if ($request->filled('loan_officer_id')) {
+            $query->forOfficer((int) $request->integer('loan_officer_id'));
+        }
+
+        $minDaysPastDue = $request->filled('min_days_past_due')
+            ? max(0, (int) $request->integer('min_days_past_due'))
+            : null;
+        $maxDaysPastDue = $request->filled('max_days_past_due')
+            ? max(0, (int) $request->integer('max_days_past_due'))
+            : null;
+
+        if ($request->boolean('overdue') || $minDaysPastDue !== null || $maxDaysPastDue !== null) {
+            $query->inArrears($minDaysPastDue, $maxDaysPastDue);
+        }
+
         $loans = QueryPipeline::for($request, $specification)->paginate($query);
 
         return ApiResponse::paginated(

@@ -6,6 +6,7 @@ namespace Tests\Feature\Loans;
 
 use App\Domains\Accounts\Enums\BankAccountPurpose;
 use App\Domains\Accounts\Models\BankAccount;
+use App\Domains\Identity\Enums\AccessScope;
 use App\Domains\Identity\Enums\Permission;
 use App\Domains\Identity\Enums\Role;
 use App\Domains\Identity\Models\Staff;
@@ -18,6 +19,8 @@ use App\Domains\LoanApplications\Services\LoanApplicationService;
 use App\Domains\LoanProducts\Models\LoanProduct;
 use App\Domains\Loans\Enums\LoanStatus;
 use App\Domains\Loans\Models\Loan;
+use App\Domains\Loans\Models\LoanScheduleEntry;
+use App\Domains\Merchants\Models\Merchant;
 use App\Support\Exceptions\DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -457,5 +460,89 @@ final class LoanTest extends TestCase
 
         $response->assertOk();
         $this->assertSame($loan->loan_reference, $response->json('data.loan_reference'));
+    }
+
+    #[Test]
+    public function the_loan_list_can_be_filtered_by_loan_officer(): void
+    {
+        $this->actingAsStaffWith([Permission::LoansView], ['access_scope' => AccessScope::Global]);
+
+        $officer = Staff::factory()->create();
+        $theirBorrower = Merchant::factory()->create(['assigned_officer_id' => $officer->id]);
+        $mine = Loan::factory()->disbursed()->create(['merchant_id' => $theirBorrower->id]);
+
+        $someoneElse = Loan::factory()->disbursed()->create();
+
+        $response = $this->getJson('/api/v1/admin/loans?loan_officer_id='.$officer->id)->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id');
+        $this->assertTrue($ids->contains($mine->id));
+        $this->assertFalse($ids->contains($someoneElse->id));
+    }
+
+    #[Test]
+    public function the_loan_list_can_be_filtered_to_loans_in_arrears(): void
+    {
+        $this->actingAsStaffWith([Permission::LoansView], ['access_scope' => AccessScope::Global]);
+
+        $overdue = Loan::factory()->disbursed()->create();
+        LoanScheduleEntry::factory()->create([
+            'loan_id' => $overdue->id,
+            'due_date' => now()->subDays(10)->toDateString(),
+            'principal_due' => '5000.00', 'interest_due' => '500.00',
+        ]);
+
+        $current = Loan::factory()->disbursed()->create();
+        LoanScheduleEntry::factory()->create([
+            'loan_id' => $current->id,
+            'due_date' => now()->addDays(5)->toDateString(),
+            'principal_due' => '5000.00', 'interest_due' => '500.00',
+        ]);
+
+        $paid = Loan::factory()->disbursed()->create();
+        LoanScheduleEntry::factory()->create([
+            'loan_id' => $paid->id,
+            'due_date' => now()->subDays(10)->toDateString(),
+            'principal_due' => '5000.00', 'interest_due' => '500.00',
+            'principal_paid' => '5000.00', 'interest_paid' => '500.00',
+        ]);
+
+        $ids = collect($this->getJson('/api/v1/admin/loans?overdue=1')->assertOk()->json('data'))->pluck('id');
+
+        $this->assertTrue($ids->contains($overdue->id));
+        $this->assertFalse($ids->contains($current->id));
+        $this->assertFalse($ids->contains($paid->id));
+    }
+
+    #[Test]
+    public function the_loan_list_can_be_filtered_by_a_days_past_due_band(): void
+    {
+        $this->actingAsStaffWith([Permission::LoansView], ['access_scope' => AccessScope::Global]);
+
+        $shallow = Loan::factory()->disbursed()->create();
+        LoanScheduleEntry::factory()->create([
+            'loan_id' => $shallow->id,
+            'due_date' => now()->subDays(10)->toDateString(),
+            'principal_due' => '5000.00', 'interest_due' => '0.00',
+        ]);
+
+        $deep = Loan::factory()->disbursed()->create();
+        LoanScheduleEntry::factory()->create([
+            'loan_id' => $deep->id,
+            'due_date' => now()->subDays(45)->toDateString(),
+            'principal_due' => '5000.00', 'interest_due' => '0.00',
+        ]);
+
+        // 30+ days past due only.
+        $par30 = collect($this->getJson('/api/v1/admin/loans?min_days_past_due=30')->assertOk()->json('data'))->pluck('id');
+        $this->assertTrue($par30->contains($deep->id));
+        $this->assertFalse($par30->contains($shallow->id));
+
+        // The 8–30 day ageing bucket.
+        $bucket = collect(
+            $this->getJson('/api/v1/admin/loans?min_days_past_due=8&max_days_past_due=30')->assertOk()->json('data'),
+        )->pluck('id');
+        $this->assertTrue($bucket->contains($shallow->id));
+        $this->assertFalse($bucket->contains($deep->id));
     }
 }

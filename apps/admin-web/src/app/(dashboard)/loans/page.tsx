@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -14,18 +14,21 @@ import { SelectField } from '@/components/ui/select';
 import { formatDate, formatMoney, merchantLabel } from '@/lib/format';
 import { useLoans } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
+import { useStaffList } from '@/lib/staff/use-staff';
 
 /**
- * Filters the dashboard can pass in the URL when a metric is drilled into.
- * They are read-only here: the loans API applies them, and a banner offers to
- * clear them.
+ * Filters passed only in the URL — set when a loan portfolio metric is
+ * drilled into. They have no visible control here; a banner offers to clear
+ * them. `status`, `loan_officer_id` and the arrears filter do have controls
+ * and are handled separately.
  */
-const DRILL_KEYS = [
+const DRILL_ONLY_KEYS = [
   'loan_product_id',
   'branch_id',
   'merchant_id',
   'disbursement_date_from',
   'disbursement_date_to',
+  'max_days_past_due',
 ] as const;
 
 const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -43,6 +46,15 @@ const statusOptions = [
   { value: 'written_off', label: 'Written off' },
 ];
 
+const arrearsOptions = [
+  { value: '', label: 'Any' },
+  { value: 'overdue', label: 'In arrears (any)' },
+  { value: '1', label: '1+ days past due' },
+  { value: '30', label: '30+ days past due' },
+  { value: '60', label: '60+ days past due' },
+  { value: '90', label: '90+ days past due' },
+];
+
 export default function LoansPage() {
   return (
     <Suspense fallback={<PageHeader title="Loans" />}>
@@ -53,24 +65,45 @@ export default function LoansPage() {
 
 function LoansList() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const status = searchParams.get('status') ?? '';
+  const officer = searchParams.get('loan_officer_id') ?? '';
+  const arrears =
+    searchParams.get('overdue') === '1' ? 'overdue' : (searchParams.get('min_days_past_due') ?? '');
 
   const drill = useMemo(() => {
     const entries: Record<string, string> = {};
-    for (const key of DRILL_KEYS) {
+    for (const key of DRILL_ONLY_KEYS) {
       const value = searchParams.get(key);
       if (value) entries[key] = value;
     }
     return entries;
   }, [searchParams]);
 
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState(searchParams.get('status') ?? '');
-  const [page, setPage] = useState(1);
+  const officers = useStaffList({ per_page: 200 });
+
+  function setParam(patch: Record<string, string | null>) {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === '') next.delete(key);
+      else next.set(key, value);
+    }
+    setPage(1);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   const { data, isLoading, error } = useLoans({
     search: search || undefined,
     status: status || undefined,
+    loan_officer_id: officer || undefined,
+    overdue: arrears === 'overdue' ? 1 : undefined,
+    min_days_past_due: /^\d+$/.test(arrears) ? Number(arrears) : undefined,
     page,
     per_page: 20,
     ...drill,
@@ -113,11 +146,32 @@ function LoansList() {
           label="Status"
           options={statusOptions}
           value={status}
-          onChange={(event) => {
-            setPage(1);
-            setStatus(event.target.value);
-          }}
+          onChange={(event) => setParam({ status: event.target.value })}
+          className="w-52"
+        />
+        <SelectField
+          label="Loan officer"
+          options={[
+            { value: '', label: 'All officers' },
+            ...(officers.data?.items ?? []).map((staff) => ({ value: String(staff.id), label: staff.full_name })),
+          ]}
+          value={officer}
+          onChange={(event) => setParam({ loan_officer_id: event.target.value })}
           className="w-56"
+        />
+        <SelectField
+          label="Arrears"
+          options={arrearsOptions}
+          value={arrears}
+          onChange={(event) => {
+            const value = event.target.value;
+            setParam({
+              overdue: value === 'overdue' ? '1' : null,
+              min_days_past_due: /^\d+$/.test(value) ? value : null,
+              max_days_past_due: null,
+            });
+          }}
+          className="w-52"
         />
       </div>
 
