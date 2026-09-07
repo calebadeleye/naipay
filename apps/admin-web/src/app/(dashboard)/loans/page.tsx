@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -13,6 +14,19 @@ import { SelectField } from '@/components/ui/select';
 import { formatDate, formatMoney, merchantLabel } from '@/lib/format';
 import { useLoans } from '@/lib/loans/use-loans';
 import type { LoanStatusKey } from '@/lib/loans/types';
+
+/**
+ * Filters the dashboard can pass in the URL when a metric is drilled into.
+ * They are read-only here: the loans API applies them, and a banner offers to
+ * clear them.
+ */
+const DRILL_KEYS = [
+  'loan_product_id',
+  'branch_id',
+  'merchant_id',
+  'disbursement_date_from',
+  'disbursement_date_to',
+] as const;
 
 const statusTone: Record<LoanStatusKey, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   pending_approval: 'warning',
@@ -30,8 +44,28 @@ const statusOptions = [
 ];
 
 export default function LoansPage() {
+  return (
+    <Suspense fallback={<PageHeader title="Loans" />}>
+      <LoansList />
+    </Suspense>
+  );
+}
+
+function LoansList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const drill = useMemo(() => {
+    const entries: Record<string, string> = {};
+    for (const key of DRILL_KEYS) {
+      const value = searchParams.get(key);
+      if (value) entries[key] = value;
+    }
+    return entries;
+  }, [searchParams]);
+
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(searchParams.get('status') ?? '');
   const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useLoans({
@@ -39,10 +73,26 @@ export default function LoansPage() {
     status: status || undefined,
     page,
     per_page: 20,
+    ...drill,
   });
+
+  const hasDrill = Object.keys(drill).length > 0;
 
   return (
     <>
+      {hasDrill ? (
+        <div className="glass-surface flex flex-wrap items-center gap-3 rounded-2xl px-5 py-3 text-sm text-slate-600">
+          <span>Filtered from the loan portfolio dashboard.</span>
+          <button
+            type="button"
+            onClick={() => router.replace('/loans')}
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
+
       <PageHeader
         title="Loans"
         description="Loans move here automatically once their application is approved — there is no manual creation."
