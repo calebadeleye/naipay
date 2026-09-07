@@ -430,6 +430,89 @@ final class LoanPortfolioAnalyticsTest extends TestCase
         $this->assertSame('NGN', $meta['meta']['currency']);
     }
 
+    #[Test]
+    public function the_csv_export_needs_the_export_permission(): void
+    {
+        $this->seedPortfolio();
+        $this->actingAsAnalyst(); // reports.view only
+
+        $this->getJson($this->url.'/export')->assertForbidden();
+    }
+
+    #[Test]
+    public function the_summary_csv_carries_the_same_figures_as_the_dashboard(): void
+    {
+        $this->seedPortfolio();
+        $this->actingAsExporter();
+
+        $response = $this->get($this->url.'/export');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString(
+            'attachment; filename="loan-portfolio-summary-2026-06-01_2026-06-15.csv"',
+            $response->headers->get('content-disposition') ?? '',
+        );
+
+        $rows = $this->parseCsv((string) $response->getContent());
+
+        $this->assertContains(['Range', 'This month', '2026-06-01 to 2026-06-15'], $rows);
+        // Same numbers the KPI assertions check, in the long-format rows.
+        $this->assertContains(['KPI', 'Total disbursed', '165000.00', '30000.00', '450'], $rows);
+        $this->assertContains(['KPI', 'Outstanding principal', '140000.00', '0.00', ''], $rows);
+        $this->assertContains(['KPI', 'Overdue amount', '60000.00', '0.00', ''], $rows);
+        $this->assertContains(['Portfolio at risk', 'PAR 1', '100000.00', '', '71.43'], $rows);
+        $this->assertContains(['Interest & fees', 'Interest collected', '5000.00', '', ''], $rows);
+        $this->assertContains(['Write-off & recovery', 'Written-off amount', '25000.00', '', ''], $rows);
+    }
+
+    #[Test]
+    public function the_product_section_csv_is_a_wide_table_matching_by_product(): void
+    {
+        $this->seedPortfolio();
+        $this->actingAsExporter();
+
+        $rows = $this->parseCsv(
+            (string) $this->get($this->url.'/export?section=products')->assertOk()->getContent(),
+        );
+
+        $this->assertContains(
+            ['Product', 'Loans', 'Borrowers', 'Total disbursed', 'Outstanding principal',
+                'Outstanding receivable', 'Collected', 'Overdue', 'PAR 30', 'Collection rate %'],
+            $rows,
+        );
+        $this->assertContains(
+            ['Daily Trader', '4', '3', '165000.00', '140000.00', '168000.00', '20000.00', '60000.00', '0.00', '22.22'],
+            $rows,
+        );
+    }
+
+    #[Test]
+    public function the_export_honours_the_active_filters(): void
+    {
+        $this->seedPortfolio();
+        $other = LoanProduct::factory()->create(['name' => 'Weekly']);
+        $this->actingAsExporter();
+
+        $rows = $this->parseCsv(
+            (string) $this->get($this->url.'/export?section=products&loan_product_id='.$other->id)
+                ->assertOk()->getContent(),
+        );
+
+        // The filter is noted in the preamble, and no product row is written.
+        $this->assertContains(['Filter', 'Loan product ID: '.$other->id], $rows);
+        $this->assertEmpty(array_filter($rows, static fn (array $row): bool => ($row[0] ?? '') === 'Daily Trader'));
+    }
+
+    #[Test]
+    public function an_unknown_export_section_is_rejected(): void
+    {
+        $this->seedPortfolio();
+        $this->actingAsExporter();
+
+        $this->getJson($this->url.'/export?section=nonsense')->assertStatus(422);
+    }
+
     // ── Fixture ────────────────────────────────────────────────────────────
 
     /**
@@ -575,6 +658,32 @@ final class LoanPortfolioAnalyticsTest extends TestCase
         return $this->actingAsStaffWith(
             [Permission::ReportsView],
             array_merge(['access_scope' => AccessScope::Global], $attributes),
+        );
+    }
+
+    private function actingAsExporter(): Staff
+    {
+        return $this->actingAsStaffWith(
+            [Permission::ReportsView, Permission::ReportsExport],
+            ['access_scope' => AccessScope::Global],
+        );
+    }
+
+    // ── CSV export ───────────────────────────────────────────────────────
+
+    /**
+     * Parses CSV text into rows of string cells, so an assertion tests the
+     * data rather than fputcsv's quoting.
+     *
+     * @return list<list<string>>
+     */
+    private function parseCsv(string $body): array
+    {
+        $body = ltrim($body, "\u{FEFF}");
+
+        return array_map(
+            static fn (string $line): array => str_getcsv($line, ',', '"', '\\'),
+            array_filter(preg_split('/\r\n/', trim($body)) ?: []),
         );
     }
 }

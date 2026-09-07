@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 import type { LoanStatusKey } from '@/lib/reports/types';
@@ -265,7 +265,7 @@ export function filtersToSearchParams(state: PortfolioFilterState): URLSearchPar
 }
 
 /** The request query object sent to the API (same keys, minus empties). */
-function toRequestQuery(state: PortfolioFilterState): Record<string, string> {
+export function portfolioRequestQuery(state: PortfolioFilterState): Record<string, string> {
   const params = filtersToSearchParams(state);
   // `range` is dropped from the query string when it equals the default, but
   // the API is happy to receive it explicitly and it keeps the query key
@@ -286,7 +286,7 @@ export function activeFilterCount(state: PortfolioFilterState): number {
 // ── Hook ─────────────────────────────────────────────────────────────────
 
 export function usePortfolioAnalytics(state: PortfolioFilterState) {
-  const query = toRequestQuery(state);
+  const query = portfolioRequestQuery(state);
 
   return useQuery({
     queryKey: ['reports', 'loan-portfolio-analytics', query],
@@ -294,5 +294,38 @@ export function usePortfolioAnalytics(state: PortfolioFilterState) {
       api.get<PortfolioAnalytics>('/admin/reports/loan-portfolio/analytics', { signal, query }),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
+  });
+}
+
+export type PortfolioExportSection =
+  | 'summary'
+  | 'status'
+  | 'products'
+  | 'officers'
+  | 'branches'
+  | 'aging'
+  | 'risk';
+
+/**
+ * Downloads a section of the dashboard as CSV — computed from the same
+ * endpoint, for the same filters. The API client's `download()` attaches the
+ * bearer token a plain `<a href>` could not.
+ */
+export function usePortfolioAnalyticsExport(state: PortfolioFilterState) {
+  return useMutation({
+    mutationFn: async (section: PortfolioExportSection) => {
+      const blob = await api.download('/admin/reports/loan-portfolio/analytics/export', {
+        query: { ...portfolioRequestQuery(state), section },
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `loan-portfolio-${section}-${state.date_from ?? 'current'}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    },
   });
 }

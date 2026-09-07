@@ -13,8 +13,11 @@ use Illuminate\Validation\Rule;
 /**
  * Validates the portfolio dashboard's filter query string. Everything is a
  * GET parameter so a filtered dashboard is a shareable URL.
+ *
+ * Extended by PortfolioAnalyticsExportRequest, which adds `section` and swaps
+ * the permission — hence not final.
  */
-final class PortfolioAnalyticsRequest extends FormRequest
+class PortfolioAnalyticsRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -13,6 +13,7 @@ import {
   LoanPerformancePanel,
   WriteOffRecoveryPanel,
 } from '@/components/reports/portfolio/insight-panels';
+import { PortfolioExportMenu } from '@/components/reports/portfolio/export-menu';
 import { KpiCard, KpiGrid } from '@/components/reports/portfolio/kpi-grid';
 import { PortfolioFilters } from '@/components/reports/portfolio/portfolio-filters';
 import { AgingPanel, RiskPanel } from '@/components/reports/portfolio/risk-aging';
@@ -85,12 +86,15 @@ function LoanPortfolioDashboard() {
         title="Loan portfolio"
         description="Portfolio overview and risk monitoring."
         actions={
-          data ? (
-            <span className="text-xs text-slate-500">
-              {data.filters.range_label} · as at {formatDate(data.meta.as_of)}
-              {isFetching ? ' · updating…' : ''}
-            </span>
-          ) : null
+          <div className="flex items-center gap-3">
+            {data ? (
+              <span className="text-xs text-slate-500">
+                {data.filters.range_label} · as at {formatDate(data.meta.as_of)}
+                {isFetching ? ' · updating…' : ''}
+              </span>
+            ) : null}
+            <PortfolioExportMenu filters={filters} />
+          </div>
         }
       />
 

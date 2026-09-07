@@ -39,6 +39,10 @@ Route::middleware(['auth:staff', 'session.expiry', 'security.steps'])
                     ->middleware('permission:'.Permission::ReportsView->value)
                     ->name('loan-portfolio.analytics');
 
+                Route::get('loan-portfolio/analytics/export', [ReportController::class, 'portfolioAnalyticsExport'])
+                    ->middleware('permission:'.Permission::ReportsExport->value)
+                    ->name('loan-portfolio.analytics.export');
+
                 Route::get('collections', [ReportController::class, 'collections'])
                     ->middleware('permission:'.Permission::ReportsView->value)
                     ->name('collections');
