@@ -106,21 +106,21 @@ if [[ "$DO_RSYNC" == "1" ]]; then
   # Trailing slash on the source: copy the contents of REPO_ROOT into REMOTE_DIR.
   # Excluded paths are also protected from --delete (rsync will not remove an
   # excluded path on the receiver without --delete-excluded, which we never set).
-  rsync -az --delete $([[ $DRY_RUN == 1 ]] && echo --dry-run) --info=stats1,del,name0 \
-    --exclude='.git/' \
-    --exclude='.github/' \
-    --exclude='**/node_modules/' \
-    --exclude='backend/api/vendor/' \
-    --exclude='backend/api/.env' \
-    --exclude='backend/api/.env.*' \
-    --exclude='backend/api/storage/' \
-    --exclude='backend/api/bootstrap/cache/*.php' \
-    --exclude='apps/*/.next/' \
-    --exclude='apps/*/.env' \
-    --exclude='apps/*/.env.*' \
-    --exclude='infrastructure/deployment/deploy.env' \
+  # Flags kept to what the stock macOS rsync (2.6.9) also understands; a
+  # leading "/" anchors a pattern to the transfer root, a bare name matches at
+  # any depth.
+  rsync -az --delete --stats $([[ $DRY_RUN == 1 ]] && echo '--dry-run --itemize-changes') \
+    --exclude='.git' \
+    --exclude='.github' \
+    --exclude='node_modules' \
+    --exclude='.next' \
     --exclude='.DS_Store' \
-    --exclude='**/.DS_Store' \
+    --exclude='/backend/api/vendor/' \
+    --exclude='/backend/api/storage/' \
+    --exclude='/backend/api/bootstrap/cache/*.php' \
+    --exclude='.env' \
+    --exclude='.env.*' \
+    --exclude='/infrastructure/deployment/deploy.env' \
     "$REPO_ROOT/" "$SSH_HOST:$REMOTE_DIR/"
 fi
 
