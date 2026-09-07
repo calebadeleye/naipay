@@ -46,11 +46,13 @@ final class StaffManagementTest extends TestCase
     public function a_created_account_receives_a_generated_temporary_password_it_must_change(): void
     {
         $this->actingAsRole(Role::SuperAdministrator);
+        $branch = Branch::factory()->create();
 
         $response = $this->postJson('/api/v1/admin/staff', [
             'first_name' => 'Ifeanyi',
             'last_name' => 'Eze',
             'email' => 'ifeanyi.eze@naitalk.com',
+            'branch_id' => $branch->id,
         ])->assertCreated();
 
         $temporary = $response->json('data.temporary_password');

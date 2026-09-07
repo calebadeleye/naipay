@@ -79,15 +79,15 @@ final class ApiExceptionRenderer
             // message instead of a raw SQL error.
             $e instanceof QueryException && $this->isDuplicateEntry($e) => $this->renderDuplicateEntry($e),
 
-            // Thrown both when no route matches at all (Symfony leaves the
-            // message empty) and by an application-level `abort(404, '...')`
-            // (which carries a real, meaningful message — e.g. a merchant
-            // outside the caller's branch). Only the former should say
-            // "endpoint does not exist"; the latter must survive verbatim,
-            // or every deliberate not-found response looks like a broken
-            // route to whoever reads it.
+            // Thrown both when no route matches (an empty message from
+            // Symfony, or Laravel's own "The route <uri> could not be
+            // found.") and by an application-level `abort(404, '...')`, which
+            // carries a real, meaningful message — e.g. a merchant outside the
+            // caller's branch. Only the route-miss should say "endpoint does
+            // not exist"; a deliberate not-found message must survive verbatim,
+            // or it looks like a broken route to whoever reads it.
             $e instanceof NotFoundHttpException => ApiResponse::notFound(
-                $e->getMessage() !== '' ? $e->getMessage() : 'The requested endpoint does not exist.'
+                $this->isRouteMiss($e) ? 'The requested endpoint does not exist.' : $e->getMessage()
             ),
 
             $e instanceof MethodNotAllowedHttpException => ApiResponse::error(
@@ -129,6 +129,19 @@ final class ApiExceptionRenderer
         }
 
         return ApiResponse::error($e->getMessage(), $e->errors(), $e->status());
+    }
+
+    /**
+     * A NotFoundHttpException that means "nothing routes here", as opposed to
+     * a deliberate abort(404, 'a real message'). Symfony raises it with an
+     * empty message; Laravel's router raises it as "The route <uri> could not
+     * be found." Both are route misses and neither message should reach a
+     * caller.
+     */
+    private function isRouteMiss(NotFoundHttpException $e): bool
+    {
+        return $e->getMessage() === ''
+            || preg_match('/^The route .+ could not be found\.$/', $e->getMessage()) === 1;
     }
 
     private function isDuplicateEntry(QueryException $e): bool
