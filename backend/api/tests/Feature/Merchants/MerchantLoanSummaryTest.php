@@ -42,8 +42,8 @@ final class MerchantLoanSummaryTest extends TestCase
 
         $this->assertSame('130000.00', $response->json('data.loan_summary.total_paid.amount'));
         $this->assertSame('50000.00', $response->json('data.loan_summary.total_outstanding.amount'));
-        // 130,000 paid of 180,000 total payable.
-        $this->assertSame(72.22, $response->json('data.loan_summary.percent_paid'));
+        $this->assertSame(20, $response->json('data.loan_summary.interest_rate'));
+        $this->assertSame([20], $response->json('data.loan_summary.interest_rates'));
         $this->assertSame(1, $response->json('data.loan_summary.disbursed_loan_count'));
         $this->assertSame(0, $response->json('data.loan_summary.fully_paid_loan_count'));
         $this->assertTrue($response->json('data.loan_summary.has_active_loan'));
@@ -72,7 +72,22 @@ final class MerchantLoanSummaryTest extends TestCase
         $this->assertTrue($merchantResponse->json('data.loan_summary.all_loans_fully_paid'));
         $this->assertFalse($merchantResponse->json('data.loan_summary.has_active_loan'));
         $this->assertSame(1, $merchantResponse->json('data.loan_summary.fully_paid_loan_count'));
-        $this->assertSame(100, $merchantResponse->json('data.loan_summary.percent_paid'));
+    }
+
+    #[Test]
+    public function distinct_interest_rates_across_a_merchants_loans_show_up_as_a_list_not_a_false_single_figure(): void
+    {
+        $this->actingAsRole(Role::LoanOfficer, ['access_scope' => 'global']);
+
+        $merchant = Merchant::factory()->approved()->create(['merchant_status' => MerchantStatus::Active]);
+
+        Loan::factory()->disbursed()->create(['merchant_id' => $merchant->id, 'interest_rate' => '20.0000']);
+        Loan::factory()->disbursed()->create(['merchant_id' => $merchant->id, 'interest_rate' => '15.5000']);
+
+        $response = $this->getJson("/api/v1/admin/merchants/{$merchant->id}")->assertOk();
+
+        $this->assertNull($response->json('data.loan_summary.interest_rate'));
+        $this->assertSame([15.5, 20], $response->json('data.loan_summary.interest_rates'));
     }
 
     #[Test]

@@ -85,7 +85,9 @@ export interface Merchant {
     all_loans_fully_paid: boolean;
     total_paid: MoneyValue | null;
     total_outstanding: MoneyValue | null;
-    percent_paid: number | null;
+    /** Set only when every disbursed loan shares one rate; see interest_rates otherwise. */
+    interest_rate: number | null;
+    interest_rates: number[];
   } | null;
 
   rejection_reason: string | null;

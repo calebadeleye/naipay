@@ -9,7 +9,6 @@ use App\Domains\Identity\Enums\Permission;
 use App\Domains\Loans\Enums\LoanStatus;
 use App\Domains\Loans\Models\Loan;
 use App\Domains\Merchants\Models\Merchant;
-use App\Support\Money\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -190,12 +189,17 @@ final class MerchantResource extends JsonResource
             }
         }
 
-        // Display-only float, same convention as the portfolio analytics
-        // service's ratios: round(x, 2), or null when there's nothing to
-        // divide by yet.
-        $percentPaid = $totalPaid !== null && $totalOutstanding !== null
-            ? $this->percentPaid($totalPaid, $totalOutstanding)
-            : null;
+        // The rate(s) the merchant is actually borrowing at. `interest_rate`
+        // is only set when every disbursed loan shares one rate — with
+        // several loans at different rates there's no single figure to show,
+        // so the caller falls back to the full `interest_rates` list.
+        $interestRates = $disbursed
+            ->pluck('interest_rate')
+            ->filter(fn (?string $rate): bool => $rate !== null)
+            ->map(fn (string $rate): float => (float) $rate)
+            ->unique()
+            ->sort()
+            ->values();
 
         return [
             'disbursed_loan_count' => $disbursed->count(),
@@ -204,24 +208,8 @@ final class MerchantResource extends JsonResource
             'all_loans_fully_paid' => $disbursed->isNotEmpty() && $fullyPaidCount === $disbursed->count(),
             'total_paid' => $totalPaid?->jsonSerialize(),
             'total_outstanding' => $totalOutstanding?->jsonSerialize(),
-            'percent_paid' => $percentPaid,
+            'interest_rate' => $interestRates->count() === 1 ? $interestRates->first() : null,
+            'interest_rates' => $interestRates->all(),
         ];
-    }
-
-    /**
-     * What fraction of what's been contracted across the merchant's
-     * disbursed loans (paid + still outstanding) has actually been paid,
-     * as a percentage. Compared in minor units to avoid floating-point
-     * division on the Money value itself.
-     */
-    private function percentPaid(Money $totalPaid, Money $totalOutstanding): ?float
-    {
-        $totalPayable = $totalPaid->minorUnits() + $totalOutstanding->minorUnits();
-
-        if ($totalPayable === 0) {
-            return null;
-        }
-
-        return round(($totalPaid->minorUnits() / $totalPayable) * 100, 2);
     }
 }

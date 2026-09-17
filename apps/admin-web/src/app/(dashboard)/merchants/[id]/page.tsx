@@ -521,9 +521,13 @@ export default function MerchantDetailPage() {
                   <Detail label="Total paid (incl. interest)" value={formatMoney(merchant.loan_summary.total_paid)} />
                   <Detail label="Outstanding" value={formatMoney(merchant.loan_summary.total_outstanding)} />
                   <Detail
-                    label="% paid"
+                    label="Interest rate"
                     value={
-                      merchant.loan_summary.percent_paid !== null ? `${merchant.loan_summary.percent_paid}%` : '—'
+                      merchant.loan_summary.interest_rate !== null
+                        ? `${merchant.loan_summary.interest_rate}%`
+                        : merchant.loan_summary.interest_rates.length > 0
+                          ? merchant.loan_summary.interest_rates.map((rate) => `${rate}%`).join(', ')
+                          : '—'
                     }
                   />
                   <Detail label="Disbursed loans" value={String(merchant.loan_summary.disbursed_loan_count)} />
