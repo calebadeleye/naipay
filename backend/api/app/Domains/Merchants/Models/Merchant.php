@@ -8,6 +8,7 @@ use App\Domains\Accounts\Models\MerchantAccount;
 use App\Domains\Branches\Concerns\BelongsToBranch;
 use App\Domains\Businesses\Models\Business;
 use App\Domains\Identity\Models\Staff;
+use App\Domains\Loans\Models\Loan;
 use App\Domains\Merchants\Enums\KycStatus;
 use App\Domains\Merchants\Enums\MerchantStatus;
 use App\Domains\Merchants\Enums\OnboardingStatus;
@@ -133,6 +134,14 @@ class Merchant extends Authenticatable
     public function assignedOfficer(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'assigned_officer_id');
+    }
+
+    /**
+     * @return HasMany<Loan, $this>
+     */
+    public function loans(): HasMany
+    {
+        return $this->hasMany(Loan::class);
     }
 
     /**

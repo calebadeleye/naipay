@@ -53,6 +53,15 @@ final class LoanResource extends JsonResource
                 'fees' => $loan->outstanding_fees?->jsonSerialize(),
             ] : null,
 
+            'payments' => $loan->outstanding_principal !== null ? [
+                'principal_paid' => $loan->principalPaid()?->jsonSerialize(),
+                'interest_paid' => $loan->interestPaid()?->jsonSerialize(),
+                'fees_paid' => $loan->feesPaid()?->jsonSerialize(),
+                'total_paid' => $loan->totalPaid()?->jsonSerialize(),
+            ] : null,
+
+            'is_fully_paid' => $loan->isFullyPaid(),
+
             'disbursement' => $loan->disbursed_at !== null ? [
                 'bank_account' => $loan->relationLoaded('disbursementBankAccount') && $loan->disbursementBankAccount !== null
                     ? $loan->disbursementBankAccount->label()

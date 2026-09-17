@@ -55,6 +55,15 @@ export interface Loan {
     fees: MoneyValue | null;
   } | null;
 
+  payments: {
+    principal_paid: MoneyValue | null;
+    interest_paid: MoneyValue | null;
+    fees_paid: MoneyValue | null;
+    total_paid: MoneyValue | null;
+  } | null;
+
+  is_fully_paid: boolean;
+
   disbursement: {
     bank_account: string | null;
     date: string | null;

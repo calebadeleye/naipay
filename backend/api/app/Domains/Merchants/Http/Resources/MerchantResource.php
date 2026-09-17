@@ -6,7 +6,10 @@ namespace App\Domains\Merchants\Http\Resources;
 
 use App\Domains\Businesses\Http\Resources\BusinessResource;
 use App\Domains\Identity\Enums\Permission;
+use App\Domains\Loans\Enums\LoanStatus;
+use App\Domains\Loans\Models\Loan;
 use App\Domains\Merchants\Models\Merchant;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -107,6 +110,15 @@ final class MerchantResource extends JsonResource
 
             'can_borrow' => $merchant->canBorrow(),
 
+            // Answers "has this merchant finished paying off their loan(s)?"
+            // without the caller having to fetch and reduce the loans list
+            // itself. Taking another loan is never gated on this — a
+            // merchant with every loan fully paid, or none at all, is just
+            // as eligible as one mid-repayment; see Merchant::canBorrow().
+            'loan_summary' => $merchant->relationLoaded('loans')
+                ? $this->loanSummary($merchant->loans)
+                : null,
+
             'rejection_reason' => $merchant->rejection_reason,
             'suspension_reason' => $merchant->suspension_reason,
 
@@ -142,6 +154,48 @@ final class MerchantResource extends JsonResource
 
             'created_at' => $merchant->created_at?->toIso8601String(),
             'updated_at' => $merchant->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Rolls the merchant's disbursed loans up into one "where do they stand"
+     * summary: total paid (principal + interest + fees, across every
+     * disbursed loan), what's still outstanding, and whether every loan is
+     * fully paid off. Loans never disbursed (pending approval/disbursement)
+     * carry no balances yet and are excluded.
+     *
+     * @param  Collection<int, Loan>  $loans
+     * @return array<string, mixed>
+     */
+    private function loanSummary(Collection $loans): array
+    {
+        $disbursed = $loans->filter(fn (Loan $loan): bool => $loan->status === LoanStatus::Disbursed);
+
+        $totalPaid = null;
+        $totalOutstanding = null;
+        $fullyPaidCount = 0;
+
+        foreach ($disbursed as $loan) {
+            $paid = $loan->totalPaid();
+            $outstanding = $loan->outstanding_principal
+                ->plus($loan->outstanding_interest)
+                ->plus($loan->outstanding_fees);
+
+            $totalPaid = $totalPaid === null ? $paid : $totalPaid->plus($paid);
+            $totalOutstanding = $totalOutstanding === null ? $outstanding : $totalOutstanding->plus($outstanding);
+
+            if ($loan->isFullyPaid()) {
+                $fullyPaidCount++;
+            }
+        }
+
+        return [
+            'disbursed_loan_count' => $disbursed->count(),
+            'fully_paid_loan_count' => $fullyPaidCount,
+            'has_active_loan' => $disbursed->count() > $fullyPaidCount,
+            'all_loans_fully_paid' => $disbursed->isNotEmpty() && $fullyPaidCount === $disbursed->count(),
+            'total_paid' => $totalPaid?->jsonSerialize(),
+            'total_outstanding' => $totalOutstanding?->jsonSerialize(),
         ];
     }
 }

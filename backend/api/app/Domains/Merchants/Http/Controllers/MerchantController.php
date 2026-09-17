@@ -83,7 +83,7 @@ final class MerchantController
 
         return ApiResponse::success(
             new MerchantResource(
-                $merchant->load(['branch', 'assignedOfficer', 'account', 'businesses.category', 'businesses.subcategory']),
+                $merchant->load(['branch', 'assignedOfficer', 'account', 'businesses.category', 'businesses.subcategory', 'loans']),
                 detailed: true,
             ),
             'Merchant retrieved.',

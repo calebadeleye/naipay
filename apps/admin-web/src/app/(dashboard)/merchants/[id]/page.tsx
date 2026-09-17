@@ -104,13 +104,17 @@ function MerchantActivity({ merchantId }: { merchantId: number }) {
                     </Link>
                     <p className="numeric text-xs text-slate-500">
                       {formatMoney(loan.terms.principal_amount)}
-                      {loan.outstanding ? ` · ${formatMoney(loan.outstanding.principal)} outstanding` : ''}
+                      {loan.payments?.total_paid ? ` · ${formatMoney(loan.payments.total_paid)} paid` : ''}
+                      {loan.outstanding && !loan.is_fully_paid
+                        ? ` · ${formatMoney(loan.outstanding.principal)} outstanding`
+                        : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={loan.status === 'disbursed' ? 'success' : loan.status === 'written_off' ? 'danger' : 'info'}>
                       {loan.status_label}
                     </Badge>
+                    {loan.is_fully_paid ? <Badge tone="success">Fully paid</Badge> : null}
                     {canRecordRepayment && loan.status === 'disbursed' ? (
                       <Link
                         href={`/repayments/new?loan=${loan.id}`}
@@ -551,6 +555,29 @@ export default function MerchantDetailPage() {
               <p className="text-sm text-slate-500">No businesses registered for this merchant yet.</p>
             )}
           </Card>
+
+          {merchant.loan_summary ? (
+            <Card>
+              <h2 className="mb-4 text-sm font-semibold text-slate-900">Loan summary</h2>
+              {merchant.loan_summary.disbursed_loan_count > 0 ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Detail label="Total paid (incl. interest)" value={formatMoney(merchant.loan_summary.total_paid)} />
+                  <Detail label="Outstanding" value={formatMoney(merchant.loan_summary.total_outstanding)} />
+                  <Detail label="Disbursed loans" value={String(merchant.loan_summary.disbursed_loan_count)} />
+                  <Detail
+                    label="Status"
+                    value={
+                      <Badge tone={merchant.loan_summary.all_loans_fully_paid ? 'success' : 'info'}>
+                        {merchant.loan_summary.all_loans_fully_paid ? 'Fully paid' : 'Actively repaying'}
+                      </Badge>
+                    }
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No disbursed loans yet.</p>
+              )}
+            </Card>
+          ) : null}
 
           <MerchantActivity merchantId={merchant.id} />
 

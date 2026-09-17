@@ -161,6 +161,67 @@ class Loan extends Model
     }
 
     /**
+     * Whether the merchant owes nothing further on this loan — every
+     * principal, interest and fee cent contracted has been collected.
+     * Status-based checks (`isOutstanding()`) can't tell this apart from a
+     * loan still mid-repayment, since there is no terminal "paid off" status
+     * in `LoanStatus`; this reads the cached balances instead.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->status === LoanStatus::Disbursed
+            && $this->outstanding_principal !== null
+            && $this->outstanding_principal->isZero()
+            && $this->outstanding_interest->isZero()
+            && $this->outstanding_fees->isZero();
+    }
+
+    /**
+     * Principal + interest + fees collected so far. Derived from the cached
+     * totals/outstanding balances rather than re-summing repayments, so it
+     * stays consistent with `outstanding_*` and the schedule.
+     */
+    public function totalPaid(): ?Money
+    {
+        if ($this->total_payable === null) {
+            return null;
+        }
+
+        return $this->total_payable->minus(
+            $this->outstanding_principal
+                ->plus($this->outstanding_interest)
+                ->plus($this->outstanding_fees),
+        );
+    }
+
+    public function principalPaid(): ?Money
+    {
+        if ($this->outstanding_principal === null) {
+            return null;
+        }
+
+        return $this->principal_amount->minus($this->outstanding_principal);
+    }
+
+    public function interestPaid(): ?Money
+    {
+        if ($this->total_interest === null || $this->outstanding_interest === null) {
+            return null;
+        }
+
+        return $this->total_interest->minus($this->outstanding_interest);
+    }
+
+    public function feesPaid(): ?Money
+    {
+        if ($this->total_fees === null || $this->outstanding_fees === null) {
+            return null;
+        }
+
+        return $this->total_fees->minus($this->outstanding_fees);
+    }
+
+    /**
      * Loans whose borrower is assigned to the given staff member — the same
      * loan-officer relationship the portfolio analytics use
      * (`merchants.assigned_officer_id`), not whoever keyed the loan in.

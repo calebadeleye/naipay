@@ -73,6 +73,20 @@ export interface Merchant {
 
   can_borrow: boolean;
 
+  /**
+   * Rolled up across the merchant's disbursed loans. `null` on list
+   * responses, which don't eager-load loans — only the merchant detail
+   * endpoint populates it.
+   */
+  loan_summary: {
+    disbursed_loan_count: number;
+    fully_paid_loan_count: number;
+    has_active_loan: boolean;
+    all_loans_fully_paid: boolean;
+    total_paid: MoneyValue | null;
+    total_outstanding: MoneyValue | null;
+  } | null;
+
   rejection_reason: string | null;
   suspension_reason: string | null;
 
