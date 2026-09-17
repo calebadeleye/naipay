@@ -85,6 +85,7 @@ export interface Merchant {
     all_loans_fully_paid: boolean;
     total_paid: MoneyValue | null;
     total_outstanding: MoneyValue | null;
+    percent_paid: number | null;
   } | null;
 
   rejection_reason: string | null;

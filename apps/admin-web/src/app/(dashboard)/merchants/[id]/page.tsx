@@ -15,7 +15,6 @@ import { ActionButton, ReasonActionButton } from '@/components/ui/workflow-actio
 import { useHasPermission } from '@/lib/auth/use-permission';
 import { formatDate, formatDateTime, formatMoney, maskIdentityNumber, merchantLabel } from '@/lib/format';
 import { useLoanApplications } from '@/lib/loan-applications/use-loan-applications';
-import { useLoans } from '@/lib/loans/use-loans';
 import { useRepayments } from '@/lib/repayments/use-repayments';
 import {
   useApproveMerchant,
@@ -59,19 +58,19 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /**
- * Everything a merchant has running, on the merchant's own page: their loans,
- * recent repayments and applications, each linking straight through — and the
- * "start a new one" actions — so staff don't have to leave for the Loans or
- * Repayments sections and filter back down to this person.
+ * Everything a merchant has running, on the merchant's own page: recent
+ * repayments and loan applications, each linking straight through — and the
+ * "start a new one" actions — so staff don't have to leave for the
+ * Repayments or Loan Applications sections and filter back down to this
+ * person. Loan-level detail (balances, fully-paid status) lives in the Loan
+ * summary card above instead of a duplicate list here.
  */
 function MerchantActivity({ merchantId }: { merchantId: number }) {
-  const canViewLoans = useHasPermission('loans.view');
   const canViewRepayments = useHasPermission('repayments.view');
   const canViewApplications = useHasPermission('loan_applications.view');
   const canCreateApplication = useHasPermission('loan_applications.create');
   const canRecordRepayment = useHasPermission('repayments.record');
 
-  const loans = useLoans(canViewLoans ? { merchant_id: merchantId, per_page: 10 } : undefined);
   const repayments = useRepayments(
     canViewRepayments ? { merchant_id: merchantId, per_page: 5, sort: '-payment_date' } : undefined,
   );
@@ -81,58 +80,6 @@ function MerchantActivity({ merchantId }: { merchantId: number }) {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {canViewLoans ? (
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Loans</h2>
-            {canCreateApplication ? (
-              <Link
-                href={`/loan-applications/new?merchant=${merchantId}`}
-                className={buttonVariants({ variant: 'secondary', size: 'sm' })}
-              >
-                New loan application
-              </Link>
-            ) : null}
-          </div>
-          {loans.data && loans.data.items.length > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {loans.data.items.map((loan) => (
-                <div key={loan.id} className="flex items-center justify-between gap-3 py-3">
-                  <div>
-                    <Link href={`/loans/${loan.id}`} className="font-medium text-brand-700 hover:underline">
-                      {loan.loan_product?.name ?? 'Loan'}
-                    </Link>
-                    <p className="numeric text-xs text-slate-500">
-                      {formatMoney(loan.terms.principal_amount)}
-                      {loan.payments?.total_paid ? ` · ${formatMoney(loan.payments.total_paid)} paid` : ''}
-                      {loan.outstanding && !loan.is_fully_paid
-                        ? ` · ${formatMoney(loan.outstanding.principal)} outstanding`
-                        : ''}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone={loan.status === 'disbursed' ? 'success' : loan.status === 'written_off' ? 'danger' : 'info'}>
-                      {loan.status_label}
-                    </Badge>
-                    {loan.is_fully_paid ? <Badge tone="success">Fully paid</Badge> : null}
-                    {canRecordRepayment && loan.status === 'disbursed' ? (
-                      <Link
-                        href={`/repayments/new?loan=${loan.id}`}
-                        className="text-xs font-medium text-brand-700 hover:underline"
-                      >
-                        Record repayment
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No loans for this merchant yet.</p>
-          )}
-        </Card>
-      ) : null}
-
       {canViewRepayments ? (
         <Card>
           <div className="mb-4 flex items-center justify-between">
@@ -169,7 +116,17 @@ function MerchantActivity({ merchantId }: { merchantId: number }) {
 
       {canViewApplications ? (
         <Card>
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Loan applications</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Loan applications</h2>
+            {canCreateApplication ? (
+              <Link
+                href={`/loan-applications/new?merchant=${merchantId}`}
+                className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+              >
+                New loan application
+              </Link>
+            ) : null}
+          </div>
           {applications.data && applications.data.items.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {applications.data.items.map((application) => (
@@ -560,9 +517,15 @@ export default function MerchantDetailPage() {
             <Card>
               <h2 className="mb-4 text-sm font-semibold text-slate-900">Loan summary</h2>
               {merchant.loan_summary.disbursed_loan_count > 0 ? (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
                   <Detail label="Total paid (incl. interest)" value={formatMoney(merchant.loan_summary.total_paid)} />
                   <Detail label="Outstanding" value={formatMoney(merchant.loan_summary.total_outstanding)} />
+                  <Detail
+                    label="% paid"
+                    value={
+                      merchant.loan_summary.percent_paid !== null ? `${merchant.loan_summary.percent_paid}%` : '—'
+                    }
+                  />
                   <Detail label="Disbursed loans" value={String(merchant.loan_summary.disbursed_loan_count)} />
                   <Detail
                     label="Status"

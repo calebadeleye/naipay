@@ -42,6 +42,8 @@ final class MerchantLoanSummaryTest extends TestCase
 
         $this->assertSame('130000.00', $response->json('data.loan_summary.total_paid.amount'));
         $this->assertSame('50000.00', $response->json('data.loan_summary.total_outstanding.amount'));
+        // 130,000 paid of 180,000 total payable.
+        $this->assertSame(72.22, $response->json('data.loan_summary.percent_paid'));
         $this->assertSame(1, $response->json('data.loan_summary.disbursed_loan_count'));
         $this->assertSame(0, $response->json('data.loan_summary.fully_paid_loan_count'));
         $this->assertTrue($response->json('data.loan_summary.has_active_loan'));
@@ -70,6 +72,7 @@ final class MerchantLoanSummaryTest extends TestCase
         $this->assertTrue($merchantResponse->json('data.loan_summary.all_loans_fully_paid'));
         $this->assertFalse($merchantResponse->json('data.loan_summary.has_active_loan'));
         $this->assertSame(1, $merchantResponse->json('data.loan_summary.fully_paid_loan_count'));
+        $this->assertSame(100, $merchantResponse->json('data.loan_summary.percent_paid'));
     }
 
     #[Test]
