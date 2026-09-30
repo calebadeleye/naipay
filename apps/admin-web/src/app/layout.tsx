@@ -34,12 +34,24 @@ export const metadata: Metadata = {
   referrer: 'no-referrer',
 };
 
+// Render per request, never at build time: the API URL and app name come
+// from the environment the server was *started* with (see lib/env.ts), so
+// nothing may be prerendered with whatever the build machine happened to have.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Deliberately a plain, synchronous script: it must have set
+            window.__NAIPAY_RUNTIME_ENV__ before any bundle runs, because
+            lib/env.ts reads it at module load. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/runtime-config.js" />
+      </head>
       <body className="min-h-full font-sans">
         <QueryProvider>{children}</QueryProvider>
       </body>
